@@ -124,7 +124,8 @@
 
   // ─── Ripple Effect ───
   function createRipple(e) {
-    const el = e.currentTarget;
+    const el = e.currentTarget || e.target;
+    if (!el || typeof el.getBoundingClientRect !== 'function') return;
     const rect = el.getBoundingClientRect();
     const ripple = document.createElement('span');
     const size = Math.max(rect.width, rect.height);

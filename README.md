@@ -17,7 +17,10 @@ SurakshaMap is a production-grade, community-driven public safety reporting plat
 - **Auto-Geolocation & Pin Drop**: Pinpoint exact coordinates via GPS or click-to-pin on an interactive Leaflet map.
 - **Private Tracking Code**: Generates a cryptographically secure tracking token (e.g., `SM-A1B2-C3D4`) so citizens can monitor status updates and add supplemental notes.
 
-### 2. 🗺️ Live Safety Map & Hotspot Analysis
+### 2. 🗺️ Live Safety Map with Google Maps & Satellite Intelligence
+- **Google Maps Integration**: Seamlessly renders Google Maps Roadmap, Google Hybrid Satellite, and Google Terrain using your Google Maps API Key.
+- **Satellite View Toggle**: Switch between Roadmap, Satellite photography (with streets and labels), and Terrain directly from the floating map layer control.
+- **Location Picker Satellite Mode**: Citizen report wizard includes a satellite toggle to accurately pinpoint physical hazards (e.g. broken streetlight poles, potholes).
 - **Dynamic Clustering**: Utilizes Leaflet.markercluster with risk-weighted color coding (Critical, High, Medium, Low).
 - **Temporal & Category Filters**: Filter by issue type, time of day (Night/Day), and resolution status.
 - **Safety Density & Insights**: Computes localized hazard index scores to alert citizens to high-risk zones.

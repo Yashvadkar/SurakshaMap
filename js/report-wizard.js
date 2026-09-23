@@ -101,6 +101,28 @@
     }
   }
 
+  let miniMapBaseLayer = null;
+  let miniMapType = 'roadmap';
+
+  function createMiniMapLayer(type, isDark) {
+    const key = window.SURAKSHAMAP_CONFIG?.googleMapsApiKey || 'AIzaSyCzRtILSgxp5D3BUKOjSGgf-61Js4NJbaQ';
+    if (type === 'satellite') {
+      return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${key}`, {
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20,
+        attribution: '&copy; Google Maps'
+      });
+    }
+    if (isDark) {
+      return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+    }
+    return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=${key}`, {
+      subdomains: ['0', '1', '2', '3'],
+      maxZoom: 20,
+      attribution: '&copy; Google Maps'
+    });
+  }
+
   function initMiniMap() {
     const container = document.getElementById('mini-map');
     if (!container || miniMap) return;
@@ -109,13 +131,27 @@
     miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false }).setView([center.lat, center.lng], 13);
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    L.tileLayer(isDark
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png',
-      { maxZoom: 19 }
-    ).addTo(miniMap);
+    miniMapBaseLayer = createMiniMapLayer(miniMapType, isDark);
+    miniMapBaseLayer.addTo(miniMap);
 
     L.control.zoom({ position: 'topright' }).addTo(miniMap);
+
+    // Mini-map layer switch listener
+    document.querySelectorAll('.mini-map-layer-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const type = btn.dataset.layer || 'roadmap';
+        miniMapType = type;
+        document.querySelectorAll('.mini-map-layer-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (miniMap && miniMapBaseLayer) {
+          miniMap.removeLayer(miniMapBaseLayer);
+          miniMapBaseLayer = createMiniMapLayer(miniMapType, dark);
+          miniMapBaseLayer.addTo(miniMap);
+        }
+      });
+    });
 
     miniMap.on('click', (e) => {
       selectedLocation = { lat: e.latlng.lat, lng: e.latlng.lng };

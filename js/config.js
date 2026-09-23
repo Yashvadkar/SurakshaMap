@@ -20,7 +20,10 @@
  *     - Paste it in GEMINI_API_KEY below
  *     - Free tier: 15 requests/minute, 1 million tokens/minute
  *
- *  3. ADMIN ACCOUNT:
+ *  3. GOOGLE MAPS API KEY:
+ *     - Configured below for real-time Google Maps (Roadmap & Satellite)
+ *
+ *  4. ADMIN ACCOUNT:
  *     - In Firebase Console → Authentication → Users → Add User
  *     - Enter your email and a strong password
  *     - That email/password is your admin login
@@ -30,7 +33,10 @@
 
 const SURAKSHAMAP_CONFIG = {
 
-  // ─── Firebase Configuration ───────────────────────────────────────────
+  // ─── Google Maps JavaScript API Key ─────────────────────────────────────────
+  googleMapsApiKey: "AIzaSyCzRtILSgxp5D3BUKOjSGgf-61Js4NJbaQ",
+
+  // ─── Firebase Configuration ─────────────────────────────────────────────────
   // Replace these with YOUR Firebase project values from Step 1 above.
   firebase: {
     apiKey: "YOUR_FIREBASE_API_KEY",
@@ -41,15 +47,15 @@ const SURAKSHAMAP_CONFIG = {
     appId: "YOUR_APP_ID"
   },
 
-  // ─── Google Gemini API Key ────────────────────────────────────────────
+  // ─── Google Gemini API Key ──────────────────────────────────────────────────
   // Paste your free Gemini API key from Step 2 above.
   // This is used ONLY in the admin dashboard for AI report classification.
   geminiApiKey: "YOUR_GEMINI_API_KEY",
 
-  // ─── Gemini Model (free tier) ─────────────────────────────────────────
+  // ─── Gemini Model (free tier) ───────────────────────────────────────────────
   geminiModel: "gemini-2.0-flash",
 
-  // ─── App Settings ─────────────────────────────────────────────────────
+  // ─── App Settings ───────────────────────────────────────────────────────────
   app: {
     name: "SurakshaMap",
     tagline: "Community Safety Intelligence",

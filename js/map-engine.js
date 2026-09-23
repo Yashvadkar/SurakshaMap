@@ -1,15 +1,59 @@
 /**
- * map-engine.js — Interactive Leaflet Map with Clustering & Bottom Sheet
+ * map-engine.js — Interactive Google Maps & Safety Analytics Map Engine
  */
 
 (function () {
   'use strict';
 
   let map = null;
+  let currentBaseLayer = null;
+  let currentMapType = 'roadmap'; // 'roadmap' | 'satellite' | 'terrain'
   let markerClusterGroup = null;
   let hotspotCircles = [];
   let currentFilter = 'all';
   let reports = [];
+
+  function getGoogleApiKey() {
+    return window.SURAKSHAMAP_CONFIG?.googleMapsApiKey || 'AIzaSyCzRtILSgxp5D3BUKOjSGgf-61Js4NJbaQ';
+  }
+
+  function createTileLayer(type, isDark) {
+    const key = getGoogleApiKey();
+
+    if (type === 'satellite') {
+      // Google Hybrid Satellite (satellite photography + street names and labels)
+      return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${key}`, {
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20,
+        attribution: '&copy; Google Maps'
+      });
+    }
+
+    if (type === 'terrain') {
+      // Google Terrain layer
+      return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}&key=${key}`, {
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20,
+        attribution: '&copy; Google Maps'
+      });
+    }
+
+    // Roadmap mode
+    if (isDark) {
+      // Sleek CartoDB Dark layer matching SurakshaMap's dark theme
+      return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
+      });
+    }
+
+    // Google Maps Roadmap
+    return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=${key}`, {
+      subdomains: ['0', '1', '2', '3'],
+      maxZoom: 20,
+      attribution: '&copy; Google Maps'
+    });
+  }
 
   function init() {
     loadReports();
@@ -21,7 +65,6 @@
     if (map) renderMarkers();
     renderBottomSheetList();
 
-    // Listen for changes
     window.SurakshaDB.onReportsChange((updated) => {
       reports = updated;
       if (map) renderMarkers();
@@ -33,7 +76,11 @@
     const container = document.getElementById('map');
     if (!container) return;
 
-    if (map) { map.invalidateSize(); renderMarkers(); return; }
+    if (map) {
+      map.invalidateSize();
+      renderMarkers();
+      return;
+    }
 
     const center = SURAKSHAMAP_CONFIG?.app?.defaultCenter || { lat: 19.076, lng: 72.8777 };
     const zoom = SURAKSHAMAP_CONFIG?.app?.defaultZoom || 13;
@@ -46,11 +93,8 @@
     });
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    L.tileLayer(isDark
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png',
-      { maxZoom: 19, attribution: '&copy; <a href="https://carto.com/">CARTO</a>' }
-    ).addTo(map);
+    currentBaseLayer = createTileLayer(currentMapType, isDark);
+    currentBaseLayer.addTo(map);
 
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map);
@@ -68,7 +112,59 @@
 
     renderMarkers();
     setupMapFilters();
+    setupLayerSwitcher();
     setupBottomSheet();
+    setupThemeListener();
+
+    window.SurakshaMapInstance = map;
+  }
+
+  function setMapType(type) {
+    if (currentMapType === type && currentBaseLayer) return;
+    currentMapType = type;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    if (map) {
+      if (currentBaseLayer) map.removeLayer(currentBaseLayer);
+      currentBaseLayer = createTileLayer(currentMapType, isDark);
+      currentBaseLayer.addTo(map);
+      if (markerClusterGroup) markerClusterGroup.bringToFront?.();
+    }
+
+    document.querySelectorAll('.map-layer-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.layer === type);
+    });
+  }
+
+  function setupLayerSwitcher() {
+    document.querySelectorAll('.map-layer-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.layer || 'roadmap';
+        setMapType(type);
+      });
+    });
+  }
+
+  function setupThemeListener() {
+    const updateTheme = () => {
+      if (!map) return;
+      if (currentMapType === 'roadmap') {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (currentBaseLayer) map.removeLayer(currentBaseLayer);
+        currentBaseLayer = createTileLayer(currentMapType, isDark);
+        currentBaseLayer.addTo(map);
+        if (markerClusterGroup) markerClusterGroup.bringToFront?.();
+      }
+    };
+
+    window.addEventListener('themechange', updateTheme);
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.attributeName === 'data-theme') updateTheme();
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
 
   function getMarkerColor(severity) {
@@ -81,14 +177,13 @@
     const emoji = SurakshaUI.getCategoryIcon(category);
     return L.divIcon({
       className: 'custom-map-pin',
-      html: `<div style="width:34px;height:34px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;">${emoji}</div>`,
+      html: `<div style="width:34px;height:34px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;">${emoji}</div>`,
       iconSize: [34, 34],
       iconAnchor: [17, 17]
     });
   }
 
   function renderMarkers() {
-    // Clear
     if (markerClusterGroup) markerClusterGroup.clearLayers();
     hotspotCircles.forEach(c => map.removeLayer(c));
     hotspotCircles = [];
@@ -103,9 +198,9 @@
       if (!h.center) return;
       const color = h.riskLevel === 'critical' ? '#DC2626' : h.riskLevel === 'high' ? '#EF4444' : '#F59E0B';
       const circle = L.circle([h.center.latitude, h.center.longitude], {
-        radius: 180, color, fillColor: color, fillOpacity: 0.12, weight: 2, dashArray: '5, 8'
+        radius: 180, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: '5, 8'
       }).addTo(map);
-      circle.bindTooltip(`⚠️ ${SurakshaUI.getCategoryLabel(h.dominantCategory)} Hotspot (Risk: ${h.score})`, { direction: 'top' });
+      circle.bindTooltip(`🚨 ${SurakshaUI.getCategoryLabel(h.dominantCategory)} Hotspot (Risk: ${h.score})`, { direction: 'top' });
       hotspotCircles.push(circle);
     });
 
@@ -115,7 +210,7 @@
       const marker = L.marker([r.latitude, r.longitude], { icon: createMarkerIcon(r.category, r.severity) });
 
       marker.bindPopup(`
-        <div style="font-family:var(--font-body);min-width:200px;">
+        <div style="font-family:var(--font-body);min-width:210px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <strong>${SurakshaUI.getCategoryLabel(r.category)}</strong>
             ${SurakshaUI.createSeverityBadge(r.severity)}
@@ -128,7 +223,7 @@
           </div>
           <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--c-text-light);margin-top:6px;">Token: ${r.trackingToken}</div>
         </div>
-      `, { maxWidth: 300 });
+      `, { maxWidth: 320 });
 
       if (markerClusterGroup) {
         markerClusterGroup.addLayer(marker);
@@ -137,7 +232,6 @@
       }
     });
 
-    // Update count
     const countEl = document.getElementById('bottom-sheet-count');
     if (countEl) countEl.textContent = `${filtered.length} incidents`;
   }
@@ -161,7 +255,6 @@
 
     handle.addEventListener('click', () => sheet.classList.toggle('expanded'));
 
-    // Touch drag
     let startY, currentY;
     handle.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
     handle.addEventListener('touchmove', (e) => { currentY = e.touches[0].clientY; }, { passive: true });
@@ -185,7 +278,7 @@
     const recent = filtered.slice(0, 20);
 
     if (recent.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><p class="text-muted">No incidents in this view</p></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p class="text-muted">No incidents in this view</p></div>';
       return;
     }
 
@@ -196,12 +289,12 @@
         </div>
         <div class="incident-body">
           <div class="incident-title">${SurakshaUI.getCategoryLabel(r.category)}</div>
-          <div class="incident-meta">${SurakshaUI.formatDate(r.submittedAt)} · ${SurakshaUI.escapeHtml((r.description || '').substring(0, 50))}...</div>
+          <div class="incident-meta">${SurakshaUI.formatDate(r.submittedAt)} • ${SurakshaUI.escapeHtml((r.description || '').substring(0, 50))}...</div>
         </div>
         ${SurakshaUI.createSeverityBadge(r.severity)}
       </div>
     `).join('');
   }
 
-  window.SurakshaMap = { init };
+  window.SurakshaMap = { init, setMapType, getMap: () => map };
 })();
