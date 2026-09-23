@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin Console — SurakshaMap</title>
 
@@ -12,22 +12,22 @@
   <link rel="stylesheet" href="css/layouts.css">
   <link rel="icon" type="image/png" href="assets/SurakshaMap_logo.png">
 </head>
-<body>
+<body class="admin-page">
 
-  <!-- ═══════ Header ═══════ -->
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="index.html" class="brand">
+  <!-- ─── Header ─── -->
+  <header class="site-header admin-header">
+    <div class="header-inner admin-header-inner">
+      <a href="index.html" class="brand admin-brand">
         <img src="assets/SurakshaMap_logo.png" alt="SurakshaMap" class="brand-logo" onerror="this.style.display='none'">
-        <span>SurakshaMap</span>
-        <span class="badge badge-ai" style="margin-left:8px;">Admin</span>
+        <span class="brand-title">SurakshaMap</span>
+        <span class="badge badge-ai">Admin</span>
       </a>
-      <div class="header-actions">
+      <div class="header-actions admin-header-actions">
         <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
         </button>
-        <button id="btn-admin-logout" class="btn btn-ghost btn-sm" style="display:none;">Sign Out</button>
-        <a href="index.html" class="btn btn-ghost btn-sm">← Back to App</a>
+        <button id="btn-admin-logout" class="btn btn-ghost btn-sm admin-btn-logout" style="display:none;">Sign Out</button>
+        <a href="index.html" class="btn btn-ghost btn-sm admin-btn-back"><span class="btn-text-full">← Back to App</span><span class="btn-text-mobile">← App</span></a>
       </div>
     </div>
   </header>
@@ -35,14 +35,14 @@
   <main>
     <!-- ─── Auth Section ─── -->
     <div id="admin-auth-section">
-      <div class="container container-sm" style="padding-top:var(--space-3xl);padding-bottom:var(--space-3xl);">
+      <div class="container container-sm admin-auth-container" style="padding-top:var(--space-3xl);padding-bottom:var(--space-3xl);">
         <div style="text-align:center;margin-bottom:var(--space-2xl);">
           <div style="width:64px;height:64px;border-radius:var(--radius-lg);background:var(--c-primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:var(--space-md);">🔐</div>
           <h1 class="text-heading">Admin Console</h1>
           <p class="text-muted text-small">Sign in with your admin credentials to manage reports.</p>
         </div>
 
-        <div class="card" style="max-width:400px;margin:0 auto;">
+        <div class="card admin-login-card">
           <form id="admin-login-form">
             <div class="form-group">
               <label class="form-label" for="admin-email">Email</label>
@@ -87,14 +87,16 @@
         </div>
 
         <!-- Action Bar -->
-        <div class="card" style="margin-bottom:var(--space-lg);">
-          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center;justify-content:space-between;">
-            <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" onclick="runBatchAIReview()">🤖 Run Batch AI Review</button>
-              <button class="btn btn-secondary btn-sm" id="export-csv">📥 Export CSV</button>
-              <button class="btn btn-secondary btn-sm" id="export-json">📥 Export JSON</button>
+        <div class="card admin-action-bar-card" style="margin-bottom:var(--space-lg);">
+          <div class="admin-action-bar-inner">
+            <div class="admin-action-btn-group">
+              <button class="btn btn-primary btn-sm admin-action-btn" onclick="runBatchAIReview()">🤖 Run Batch AI Review</button>
+              <button class="btn btn-secondary btn-sm admin-action-btn" id="export-csv">📥 Export CSV</button>
+              <button class="btn btn-secondary btn-sm admin-action-btn" id="export-json">📥 Export JSON</button>
             </div>
-            <input type="text" id="admin-search" class="form-input" placeholder="Search by token, category, or description..." style="max-width:300px;font-size:0.85rem;">
+            <div class="admin-search-wrapper">
+              <input type="text" id="admin-search" class="form-input" placeholder="Search by token, category, description..." style="font-size:0.85rem;">
+            </div>
           </div>
         </div>
 
@@ -118,7 +120,7 @@
         </div>
 
         <!-- Reports Table -->
-        <div class="card" style="overflow-x:auto;">
+        <div class="card admin-table-card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
           <table class="admin-table">
             <thead>
               <tr>
@@ -147,7 +149,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-
   <!-- Environment Variables (Excluded from git via .gitignore) -->
   <script src="env.js" onerror="/* env.js not present, using default configuration */"></script>
   <script src="js/config.js"></script>
