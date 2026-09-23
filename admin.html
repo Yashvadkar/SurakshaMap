@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin Console — SurakshaMap</title>
+
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layouts.css">
+  <link rel="icon" type="image/png" href="assets/SurakshaMap_logo.png">
+</head>
+<body>
+
+  <!-- ═══════ Header ═══════ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand">
+        <img src="assets/SurakshaMap_logo.png" alt="SurakshaMap" class="brand-logo" onerror="this.style.display='none'">
+        <span>SurakshaMap</span>
+        <span class="badge badge-ai" style="margin-left:8px;">Admin</span>
+      </a>
+      <div class="header-actions">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <button id="btn-admin-logout" class="btn btn-ghost btn-sm" style="display:none;">Sign Out</button>
+        <a href="index.html" class="btn btn-ghost btn-sm">← Back to App</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ─── Auth Section ─── -->
+    <div id="admin-auth-section">
+      <div class="container container-sm" style="padding-top:var(--space-3xl);padding-bottom:var(--space-3xl);">
+        <div style="text-align:center;margin-bottom:var(--space-2xl);">
+          <div style="width:64px;height:64px;border-radius:var(--radius-lg);background:var(--c-primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:var(--space-md);">🔐</div>
+          <h1 class="text-heading">Admin Console</h1>
+          <p class="text-muted text-small">Sign in with your admin credentials to manage reports.</p>
+        </div>
+
+        <div class="card" style="max-width:400px;margin:0 auto;">
+          <form id="admin-login-form">
+            <div class="form-group">
+              <label class="form-label" for="admin-email">Email</label>
+              <input type="email" id="admin-email" class="form-input" placeholder="admin@surakshamap.in" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-password">Password</label>
+              <input type="password" id="admin-password" class="form-input" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">🔐 Sign In</button>
+          </form>
+
+          <div style="margin-top:var(--space-lg);padding-top:var(--space-md);border-top:1px solid var(--c-border);">
+            <p class="text-caption text-muted" style="text-align:center;">Demo credentials: admin@surakshamap.in / suraksha-demo</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Dashboard Section ─── -->
+    <div id="admin-dashboard" style="display:none;">
+      <div class="admin-layout">
+
+        <!-- Stats Bar -->
+        <div class="admin-stats">
+          <div class="stat-card">
+            <div class="stat-value primary" id="admin-stat-total">0</div>
+            <div class="stat-label">Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value warning" id="admin-stat-pending">0</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value success" id="admin-stat-resolved">0</div>
+            <div class="stat-label">Resolved</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value danger" id="admin-stat-rejected">0</div>
+            <div class="stat-label">Rejected</div>
+          </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="card" style="margin-bottom:var(--space-lg);">
+          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center;justify-content:space-between;">
+            <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="runBatchAIReview()">🤖 Run Batch AI Review</button>
+              <button class="btn btn-secondary btn-sm" id="export-csv">📥 Export CSV</button>
+              <button class="btn btn-secondary btn-sm" id="export-json">📥 Export JSON</button>
+            </div>
+            <input type="text" id="admin-search" class="form-input" placeholder="Search by token, category, or description..." style="max-width:300px;font-size:0.85rem;">
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" data-tab="pending">
+            🤖 AI Queue <span class="tab-count" id="tab-count-pending"></span>
+          </button>
+          <button class="admin-tab" data-tab="review">
+            ⏳ Review <span class="tab-count" id="tab-count-review"></span>
+          </button>
+          <button class="admin-tab" data-tab="duplicates">
+            📋 Duplicates <span class="tab-count" id="tab-count-duplicates"></span>
+          </button>
+          <button class="admin-tab" data-tab="active">
+            🔧 Active <span class="tab-count" id="tab-count-active"></span>
+          </button>
+          <button class="admin-tab" data-tab="resolved">✅ Resolved</button>
+          <button class="admin-tab" data-tab="rejected">❌ Rejected</button>
+          <button class="admin-tab" data-tab="all">📊 All</button>
+        </div>
+
+        <!-- Reports Table -->
+        <div class="card" style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Category</th>
+                <th>Severity</th>
+                <th>Details</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--c-text-muted);">Loading reports...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+  <script src="js/config.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/ui-components.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/risk-engine.js"></script>
+  <script src="js/ai-review.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

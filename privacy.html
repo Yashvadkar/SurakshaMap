@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — SurakshaMap</title>
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layouts.css">
+  <link rel="icon" type="image/png" href="assets/SurakshaMap_logo.png">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand">
+        <img src="assets/SurakshaMap_logo.png" alt="SurakshaMap" class="brand-logo" onerror="this.style.display='none'">
+        <span>SurakshaMap</span>
+      </a>
+      <a href="index.html" class="btn btn-ghost btn-sm">← Back to App</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container container-sm" style="padding-top:var(--space-2xl);padding-bottom:var(--space-3xl);">
+      <h1 class="section-title" style="margin-bottom:var(--space-xl);">Privacy Policy</h1>
+
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">1. Zero Personal Data Collection</h2>
+        <p class="text-body">SurakshaMap is designed from the ground up to protect your privacy. We do <strong>not</strong> collect, store, or process any personally identifiable information (PII). No names, email addresses, phone numbers, IP addresses, or device fingerprints are collected during the reporting process.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">2. What We Collect</h2>
+        <p class="text-body">When you submit a report, we collect only:</p>
+        <ul style="margin-top:var(--space-sm);padding-left:var(--space-lg);">
+          <li>Issue category (e.g., broken streetlight, pothole)</li>
+          <li>Description of the hazard</li>
+          <li>GPS coordinates (latitude and longitude)</li>
+          <li>Severity level</li>
+          <li>Optional photo evidence</li>
+          <li>Timestamp of submission</li>
+        </ul>
+        <p class="text-body" style="margin-top:var(--space-sm);">None of this data is linked to any identity.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">3. Photo Handling</h2>
+        <p class="text-body">If you upload a photo, it is compressed and all EXIF metadata (which may contain location, device, and timestamp data) is stripped before storage. Photos are used solely for evidence of the reported hazard.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">4. AI Processing</h2>
+        <p class="text-body">Report descriptions are sent to Google's Gemini AI for automated classification (genuine vs. spam detection). This processing involves only the text content of the report — no personal data is transmitted.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">5. Tracking Tokens</h2>
+        <p class="text-body">Upon submission, you receive a random tracking token (e.g., SM-XXXXXX). This token is not linked to any identity and serves solely as a lookup key for report status. Tokens are stored locally in your browser.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">6. Data Storage & Security</h2>
+        <p class="text-body">Report data is stored in Google Firebase (Firestore) with security rules that restrict write access. Data is encrypted in transit (TLS) and at rest. Administrator access requires authentication.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="text-subheading" style="margin-bottom:var(--space-sm);">7. Contact</h2>
+        <p class="text-body">For privacy concerns or data deletion requests, contact the project maintainers through the project's GitHub repository.</p>
+        <p class="text-caption text-muted" style="margin-top:var(--space-md);">Last updated: September 2026</p>
+      </div>
+    </div>
+  </main>
+  <script src="js/theme.js"></script>
+</body>
+</html>

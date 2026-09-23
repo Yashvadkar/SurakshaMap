@@ -1,0 +1,12 @@
+{
+  "name": "surakshamap-deploy",
+  "version": "2.0.0",
+  "description": "SurakshaMap - Community Public-Space Safety Intelligence Platform",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "dev": "npx serve . -l 3000"
+  },
+  "author": "SurakshaMap Contributors",
+  "license": "MIT"
+}

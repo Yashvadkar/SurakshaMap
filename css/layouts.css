@@ -1,0 +1,232 @@
+/* ============================================================================
+   SurakshaMap Layout System
+   ============================================================================ */
+
+/* ─── Container ─── */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+.container-sm { max-width: var(--content-width); }
+
+/* ─── Main Content Area ─── */
+main {
+  flex: 1;
+  padding-bottom: calc(var(--bottom-nav-height) + var(--space-lg));
+}
+
+/* ─── Page Section ─── */
+.page-section {
+  padding: var(--space-2xl) 0;
+}
+
+/* ─── Grid Systems ─── */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-lg); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
+
+/* ─── Flex Utilities ─── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-xs { gap: var(--space-xs); }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.gap-lg { gap: var(--space-lg); }
+
+/* ─── Hero Section ─── */
+.hero {
+  background: var(--g-hero);
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-3xl) 0 var(--space-2xl);
+  text-align: center;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--g-hero-radial);
+  pointer-events: none;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--space-md);
+}
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: var(--c-text-muted);
+  line-height: 1.6;
+  margin-bottom: var(--space-xl);
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.hero-cta-group {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* ─── Alert Banner ─── */
+.alert-banner {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+}
+.alert-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+.alert-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--c-error); margin-bottom: 0.15rem; }
+.alert-content p { font-size: 0.85rem; color: var(--c-text-muted); line-height: 1.4; }
+
+/* ─── Admin Layout ─── */
+.admin-layout {
+  max-width: 1200px;
+  margin: var(--space-xl) auto;
+  padding: 0 var(--space-lg);
+}
+.admin-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--c-surface-elevated);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  margin-bottom: var(--space-xl);
+  overflow-x: auto;
+}
+.admin-tab {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  background: transparent;
+  border-radius: var(--radius-md);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  border: none;
+  min-width: 100px;
+}
+.admin-tab:hover { color: var(--c-text); }
+.admin-tab.active {
+  background: var(--c-surface-card);
+  color: var(--c-primary);
+  box-shadow: var(--shadow-sm);
+}
+.admin-tab .tab-count {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--c-primary-light);
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
+/* Admin Table */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.admin-table thead th {
+  text-align: left;
+  padding: 0.75rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-muted);
+  border-bottom: 2px solid var(--c-border);
+  white-space: nowrap;
+}
+.admin-table tbody td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--c-border);
+  vertical-align: middle;
+}
+.admin-table tbody tr { transition: background var(--t-fast); }
+.admin-table tbody tr:hover { background: var(--c-surface-elevated); }
+.admin-table .actions-cell {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Admin Stats Bar */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height: 56px;
+  }
+  .container { padding: 0 var(--space-md); }
+  .nav-links-desktop { display: none; }
+  .hero-title { font-size: 2.25rem; }
+  .hero-subtitle { font-size: 1rem; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .admin-tabs { gap: 0; }
+  .admin-table { font-size: 0.8rem; }
+  .admin-table thead th { font-size: 0.68rem; padding: 0.5rem; }
+  .admin-table tbody td { padding: 0.5rem; }
+  .category-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .hero { padding: var(--space-2xl) 0 var(--space-xl); }
+  .hero-cta-group { flex-direction: column; align-items: center; }
+  .hero-cta-group .btn { width: 100%; max-width: 280px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .steps-grid { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 769px) {
+  .bottom-nav { display: none; }
+  main { padding-bottom: var(--space-xl); }
+  .fab-report { bottom: 24px; right: 24px; }
+}
+
+@media (max-width: 768px) {
+  .fab-report { display: none; } /* On mobile, use bottom nav report button */
+}
+
+/* ─── Print ─── */
+@media print {
+  .site-header, .bottom-nav, .fab-report, .toast-container { display: none !important; }
+  body { padding: 0; }
+  main { padding: 0; }
+  .card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+}
