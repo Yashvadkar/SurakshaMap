@@ -11,8 +11,8 @@
 
   // ─── Gemini AI Classification ───
   async function classifyReport(report) {
-    const apiKey = cfg.geminiApiKey;
-    const model = cfg.geminiModel || 'gemini-2.0-flash';
+    const apiKey = window.__ENV__?.GEMINI_API_KEY || window.SURAKSHAMAP_CONFIG?.geminiApiKey || cfg.geminiApiKey;
+    const model = window.SURAKSHAMAP_CONFIG?.geminiModel || cfg.geminiModel || 'gemini-2.0-flash';
 
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
       console.warn('[AI Review] No Gemini API key configured. Skipping AI classification.');

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="SurakshaMap — Community-powered public space safety reporting. Report hazards anonymously, track resolution, and help make your city safer.">
   <meta name="theme-color" content="#4F46E5">
   <meta property="og:title" content="SurakshaMap — Community Safety Intelligence">
@@ -487,12 +487,12 @@
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
   <!-- Google Maps JavaScript API -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzRtILSgxp5D3BUKOjSGgf-61Js4NJbaQ"></script>
-
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <!-- App Scripts (load order matters) -->
+  <!-- Environment Variables (Excluded from git via .gitignore) -->
+  <script src="env.js" onerror="/* env.js not present, using default configuration */"></script>
   <script src="js/config.js?v=gmaps"></script>
   <script src="js/firebase-init.js?v=gmaps"></script>
   <script src="js/ui-components.js?v=gmaps"></script>

@@ -34,23 +34,23 @@
 const SURAKSHAMAP_CONFIG = {
 
   // ─── Google Maps JavaScript API Key ─────────────────────────────────────────
-  googleMapsApiKey: "AIzaSyCzRtILSgxp5D3BUKOjSGgf-61Js4NJbaQ",
+  // Read dynamically from local env.js / .env (ignored by git) or fallback placeholder
+  googleMapsApiKey: window.__ENV__?.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_MAPS_API_KEY",
 
   // ─── Firebase Configuration ─────────────────────────────────────────────────
   // Replace these with YOUR Firebase project values from Step 1 above.
   firebase: {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: window.__ENV__?.FIREBASE_API_KEY || "YOUR_FIREBASE_API_KEY",
+    authDomain: window.__ENV__?.FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: window.__ENV__?.FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
+    storageBucket: window.__ENV__?.FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.firebasestorage.app",
+    messagingSenderId: window.__ENV__?.FIREBASE_SENDER_ID || "YOUR_SENDER_ID",
+    appId: window.__ENV__?.FIREBASE_APP_ID || "YOUR_APP_ID"
   },
 
   // ─── Google Gemini API Key ──────────────────────────────────────────────────
-  // Paste your free Gemini API key from Step 2 above.
-  // This is used ONLY in the admin dashboard for AI report classification.
-  geminiApiKey: "YOUR_GEMINI_API_KEY",
+  // Read dynamically from local env.js / .env (ignored by git) or fallback placeholder
+  geminiApiKey: window.__ENV__?.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY",
 
   // ─── Gemini Model (free tier) ───────────────────────────────────────────────
   geminiModel: "gemini-2.0-flash",

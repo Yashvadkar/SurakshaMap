@@ -105,22 +105,36 @@
   let miniMapType = 'roadmap';
 
   function createMiniMapLayer(type, isDark) {
-    const key = window.SURAKSHAMAP_CONFIG?.googleMapsApiKey || 'AIzaSyCzRtILSgxp5D3BUKOjSGgf-61Js4NJbaQ';
+    const key = window.__ENV__?.GOOGLE_MAPS_API_KEY || window.SURAKSHAMAP_CONFIG?.googleMapsApiKey || '';
+    const hasGoogleKey = key && key !== 'YOUR_GOOGLE_MAPS_API_KEY';
+
     if (type === 'satellite') {
-      return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${key}`, {
+      if (hasGoogleKey) {
+        return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${key}`, {
+          subdomains: ['0', '1', '2', '3'],
+          maxZoom: 20,
+          attribution: '&copy; Google Maps'
+        });
+      }
+      return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri, Maxar'
+      });
+    }
+
+    if (isDark) {
+      return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+    }
+
+    if (hasGoogleKey) {
+      return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=${key}`, {
         subdomains: ['0', '1', '2', '3'],
         maxZoom: 20,
         attribution: '&copy; Google Maps'
       });
     }
-    if (isDark) {
-      return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
-    }
-    return L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=${key}`, {
-      subdomains: ['0', '1', '2', '3'],
-      maxZoom: 20,
-      attribution: '&copy; Google Maps'
-    });
+
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
   }
 
   function initMiniMap() {

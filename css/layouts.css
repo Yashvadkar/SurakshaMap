@@ -190,6 +190,23 @@ main {
 }
 
 @media (max-width: 768px) {
+  /* Prevent iOS Safari auto-zoom on input focus while keeping design intact */
+  .form-input,
+  .form-textarea,
+  .form-select,
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Safe padding for bottom navigation bar on mobile */
+  main {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
+  }
   :root {
     --header-height: 56px;
   }

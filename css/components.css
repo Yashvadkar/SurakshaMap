@@ -107,11 +107,13 @@
   border-top: 1px solid var(--c-border);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  height: var(--bottom-nav-height);
+  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 var(--space-sm);
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
   transition: background var(--t-base);
 }
 [data-theme="dark"] .bottom-nav {
@@ -560,7 +562,8 @@
 #map-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+  height: calc(100vh - var(--header-height) - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - var(--header-height) - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px));
 }
 #map { width: 100%; height: 100%; z-index: 1; }
 .map-controls {
@@ -688,8 +691,9 @@
   border-radius: var(--radius-full);
 }
 .bottom-sheet-content {
-  padding: 0 var(--space-lg) var(--space-lg);
+  padding: 0 var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   max-height: calc(60vh - 48px);
 }
 
@@ -926,3 +930,91 @@
 .marker-cluster-medium div { background: var(--c-accent) !important; color: #fff !important; font-family: var(--font-display) !important; font-weight: 700 !important; }
 .marker-cluster-large { background: rgba(239, 68, 68, 0.2) !important; }
 .marker-cluster-large div { background: var(--c-risk-high) !important; color: #fff !important; font-family: var(--font-display) !important; font-weight: 700 !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Mobile Web UI & Touch Optimizations
+   Preserves identical visual design while perfecting touch & mobile handling
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Eliminate tap delay and unwanted tap highlight box on mobile touchscreens */
+button,
+a,
+input,
+select,
+textarea,
+.btn,
+.nav-item,
+.map-filter-pill,
+.map-layer-btn,
+.category-option,
+.step-card {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+.btn,
+.nav-item,
+.map-filter-pill,
+.map-layer-btn,
+.category-option {
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  /* Mobile map filter pills: smooth thumb-scrollable horizontal carousel */
+  .map-controls {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 4px;
+  }
+  .map-controls::-webkit-scrollbar {
+    display: none;
+  }
+  .map-filter-pill {
+    padding: 6px 14px;
+    font-size: 0.74rem;
+    flex-shrink: 0;
+  }
+
+  /* Mobile map layer toggle (Roadmap, Satellite, Terrain) */
+  .map-layer-selector {
+    top: 50px;
+    right: 10px;
+    padding: 2px;
+  }
+  .map-layer-btn {
+    padding: 4px 9px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Responsive report wizard steps on narrow mobile screens */
+  .wizard-steps {
+    margin-bottom: var(--space-lg);
+  }
+  .wizard-step-dot {
+    width: 28px;
+    height: 28px;
+    font-size: 0.72rem;
+  }
+  .wizard-step-label {
+    font-size: 0.62rem;
+  }
+  .wizard-step-connector {
+    top: 14px;
+    left: calc(50% + 14px);
+    right: calc(-50% + 14px);
+  }
+  .photo-dropzone {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
