@@ -312,5 +312,15 @@
     `).join('');
   }
 
+  // Handle window resize and mobile orientation change
+  window.addEventListener('resize', () => {
+    if (map) map.invalidateSize();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 250);
+  });
+
   window.SurakshaMap = { init, setMapType, getMap: () => map };
 })();

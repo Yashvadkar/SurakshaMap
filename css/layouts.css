@@ -32,6 +32,14 @@ main {
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
 
+/* Ensure all flex and grid items can shrink below min-content width */
+.grid-2 > *,
+.grid-3 > *,
+.grid-4 > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* ─── Flex Utilities ─── */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
@@ -488,6 +496,9 @@ main {
 
 
 @media (max-width: 380px) {
+  .container {
+    padding: 0 12px !important;
+  }
   .admin-header-inner {
     padding: 0 10px;
   }

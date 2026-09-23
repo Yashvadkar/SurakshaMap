@@ -46,7 +46,13 @@
         if (window.SurakshaHome) window.SurakshaHome.init();
         break;
       case 'map':
-        setTimeout(() => { if (window.SurakshaMap) window.SurakshaMap.init(); }, 100);
+        setTimeout(() => {
+          if (window.SurakshaMap) {
+            window.SurakshaMap.init();
+            const m = window.SurakshaMap.getMap();
+            if (m) m.invalidateSize();
+          }
+        }, 150);
         break;
       case 'report':
         if (window.SurakshaWizard) window.SurakshaWizard.init();

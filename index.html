@@ -317,7 +317,7 @@
         </div>
 
         <!-- Navigation Buttons -->
-        <div style="display:flex;justify-content:space-between;margin-top:var(--space-xl);">
+        <div class="wizard-actions">
           <button id="wizard-prev" class="btn btn-secondary">← Back</button>
           <button id="wizard-next" class="btn btn-primary">Next →</button>
           <button id="wizard-submit" class="btn btn-primary" style="display:none;">🚀 Submit Report</button>
@@ -343,19 +343,19 @@
         <div class="grid-2" style="gap:var(--space-xl);">
           <div class="card chart-container">
             <h3 class="chart-title">Reports by Category</h3>
-            <div style="height:280px;"><canvas id="chart-category"></canvas></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-category"></canvas></div>
           </div>
           <div class="card chart-container">
             <h3 class="chart-title">Severity Distribution</h3>
-            <div style="height:280px;"><canvas id="chart-severity"></canvas></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-severity"></canvas></div>
           </div>
           <div class="card chart-container">
             <h3 class="chart-title">Report Trend (14 Days)</h3>
-            <div style="height:280px;"><canvas id="chart-trend"></canvas></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div>
           </div>
           <div class="card chart-container">
             <h3 class="chart-title">Reports by Status</h3>
-            <div style="height:280px;"><canvas id="chart-status"></canvas></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-status"></canvas></div>
           </div>
         </div>
       </div>
