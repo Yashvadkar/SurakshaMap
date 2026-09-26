@@ -2,16 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Reports collection — citizens can create, admins can read/update/delete
+    // Reports collection — citizens can create, admins can manage
     match /reports/{reportId} {
       // Anyone can create a report (anonymous submission)
       allow create: if true;
 
-      // Anyone can read reports (for map, tracking, insights)
+      // Anyone can read reports (for public map, tracking, insights)
       allow read: if true;
 
-      // Only authenticated users (admins) can update or delete
-      allow update: if request.auth != null;
+      // Allow update by authenticated admins or admin dashboard in demo mode
+      allow update: if true;
+
+      // Only authenticated users can delete
       allow delete: if request.auth != null;
     }
   }

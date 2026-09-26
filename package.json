@@ -4,8 +4,11 @@
   "description": "SurakshaMap - Community Public-Space Safety Intelligence Platform",
   "main": "index.html",
   "scripts": {
-    "start": "npx serve . -l 3000",
-    "dev": "npx serve . -l 3000"
+    "start": "npx serve public -l 3000",
+    "dev": "npx serve public -l 3000"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
   },
   "author": "SurakshaMap Contributors",
   "license": "MIT"

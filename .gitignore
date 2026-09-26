@@ -10,6 +10,13 @@ env.js
 *.env.js
 secrets.*
 
+# Platform & CLI Caches
+.firebase/
+.vercel/
+.claude/
+.agents/
+skills-lock.json
+
 # OS generated files
 .DS_Store
 Thumbs.db

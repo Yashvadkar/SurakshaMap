@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/admin.html", "destination": "/Public/admin.html" },
+    { "source": "/admin", "destination": "/Public/admin.html" },
+    { "source": "/privacy.html", "destination": "/Public/privacy.html" },
+    { "source": "/css/(.*)", "destination": "/Public/css/$1" },
+    { "source": "/js/(.*)", "destination": "/Public/js/$1" },
+    { "source": "/assets/(.*)", "destination": "/Public/assets/$1" },
+    { "source": "/env.js", "destination": "/Public/env.js" },
+    { "source": "/", "destination": "/Public/index.html" },
+    { "source": "/(.*)", "destination": "/Public/$1" }
+  ]
+}
