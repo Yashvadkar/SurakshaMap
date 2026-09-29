@@ -285,20 +285,14 @@
     const mapsUrl = `https://www.google.com/maps?q=${report.latitude},${report.longitude}`;
     const osmUrl = `https://www.openstreetmap.org/?mlat=${report.latitude}&mlon=${report.longitude}#map=17/${report.latitude}/${report.longitude}`;
 
-    // ─── Proximity & Duplicate Cluster Analysis ───
-    const otherReports = reports.filter(r => r.id !== report.id && r.status !== 'rejected' && r.status !== 'ai_rejected');
-    const nearbyReports = otherReports.map(r => {
-      if (!SurakshaRisk.hasValidLocation(r) || !SurakshaRisk.hasValidLocation(report)) return null;
-      const dist = SurakshaRisk.haversineDistance(report.latitude, report.longitude, r.latitude, r.longitude);
-      return {
-        report: r,
-        distance: Math.round(dist),
-        sameCategory: (r.category || '').toLowerCase() === (report.category || '').toLowerCase()
-      };
-    }).filter(Boolean).sort((a, b) => a.distance - b.distance);
+    // ─── Proximity & Duplicate Cluster Analysis (Category Isolation & <= 100m Cap) ───
+    const clusterAnalysis = SurakshaRisk.analyzeDuplicateClusters(report, reports, {
+      maxDuplicateRadiusMeters: 100,
+      directCollisionRadiusMeters: 50,
+      coLocatedRadiusMeters: 50
+    });
 
-    const nearby50 = nearbyReports.filter(n => n.distance <= 50);
-    const nearby200 = nearbyReports.filter(n => n.distance <= 200);
+    const { duplicateCandidates, directCollisionCount, coLocatedHazards } = clusterAnalysis;
 
     const modalBody = `
       <div style="display:flex;flex-direction:column;gap:14px;text-align:left;">
@@ -392,27 +386,35 @@
         </div>
 
         <!-- Proximity & Duplicate Cluster Card -->
-        <div style="background:var(--c-surface);border:1px solid ${nearby50.length > 0 ? 'rgba(234, 88, 12, 0.35)' : 'var(--c-border)'};border-radius:var(--radius-md);padding:12px 14px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="background:var(--c-surface);border:1px solid ${directCollisionCount > 0 ? 'rgba(234, 88, 12, 0.35)' : 'var(--c-border)'};border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
             <strong style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">
-              📍 Proximity & Duplicate Cluster Analysis
+              📍 Duplicate Cluster Analysis
             </strong>
-            <span style="font-size:0.75rem;color:${nearby50.length > 0 ? 'var(--c-warning)' : 'var(--c-text-muted)'};font-weight:600;">
-              ${nearby50.length > 0 ? `⚠️ ${nearby50.length} within 50m` : '✓ No direct collisions (<50m)'}
+            <span style="font-size:0.75rem;font-weight:600;color:${directCollisionCount > 0 ? 'var(--c-warning)' : (duplicateCandidates.length > 0 ? 'var(--c-primary)' : 'var(--c-text-muted)')};">
+              ${directCollisionCount > 0 
+                ? `⚠️ ${directCollisionCount} Duplicate Collision${directCollisionCount > 1 ? 's' : ''} (<50m)` 
+                : (duplicateCandidates.length > 0 
+                    ? `ℹ️ ${duplicateCandidates.length} Duplicate Candidate${duplicateCandidates.length > 1 ? 's' : ''} (<100m)` 
+                    : '✓ No duplicate candidates within 100m')}
             </span>
           </div>
 
-          ${nearbyReports.length > 0 ? `
-            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-              ${nearbyReports.slice(0, 3).map(n => `
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--c-surface-card);border:1px solid var(--c-border);border-radius:var(--radius-sm);font-size:0.78rem;">
+          <!-- Section 1: Same Category Duplicate Candidates (<= 100m) -->
+          ${duplicateCandidates.length > 0 ? `
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
+              <div style="font-size:0.7rem;font-weight:600;color:var(--c-warning);text-transform:uppercase;letter-spacing:0.04em;">
+                Same Category Candidates (${duplicateCandidates.length})
+              </div>
+              ${duplicateCandidates.map(n => `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--c-surface-card);border:1px solid rgba(234, 88, 12, 0.25);border-radius:var(--radius-sm);font-size:0.78rem;">
                   <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                     <span>${SurakshaUI.getCategoryIcon(n.report.category)}</span>
                     <strong style="white-space:nowrap;">${SurakshaUI.getCategoryLabel(n.report.category)}</strong>
                     <code style="font-size:0.7rem;color:var(--c-primary);font-family:var(--font-mono);">#${n.report.trackingToken}</code>
                     <span class="badge ${n.distance <= 50 ? 'badge-warning' : 'badge-low'}" style="font-size:0.68rem;padding:1px 6px;">${n.distance}m</span>
                   </div>
-                  <button type="button" class="btn btn-ghost btn-xs" style="padding:1px 6px;font-size:0.7rem;white-space:nowrap;" onclick="window.markAsDuplicateOf('${report.id}', '${n.report.trackingToken}')">
+                  <button type="button" class="btn btn-ghost btn-xs text-warning" style="padding:1px 8px;font-size:0.7rem;white-space:nowrap;" onclick="window.markAsDuplicateOf('${report.id}', '${n.report.trackingToken}')">
                     🔗 Link Duplicate
                   </button>
                 </div>
@@ -420,9 +422,31 @@
             </div>
           ` : `
             <p style="font-size:0.78rem;color:var(--c-text-muted);margin:4px 0 0 0;">
-              No other active hazards within 200m radius of these coordinates.
+              ✓ No identical-category duplicate hazards within 100m radius.
             </p>
           `}
+
+          <!-- Section 2: Co-located Different Category Incidents (<= 50m) -->
+          ${coLocatedHazards.length > 0 ? `
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--c-border);">
+              <div style="font-size:0.7rem;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.04em;">
+                Distinct Co-located Incidents (< 50m, Different Category)
+              </div>
+              ${coLocatedHazards.map(c => `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--c-surface-card);border:1px solid var(--c-border);border-radius:var(--radius-sm);font-size:0.78rem;opacity:0.85;">
+                  <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <span>${SurakshaUI.getCategoryIcon(c.report.category)}</span>
+                    <span style="white-space:nowrap;color:var(--c-text);font-weight:500;">${SurakshaUI.getCategoryLabel(c.report.category)}</span>
+                    <code style="font-size:0.7rem;color:var(--c-text-muted);font-family:var(--font-mono);">#${c.report.trackingToken}</code>
+                    <span class="badge badge-low" style="font-size:0.68rem;padding:1px 6px;">${c.distance}m</span>
+                  </div>
+                  <span style="font-size:0.7rem;color:var(--c-text-muted);font-style:italic;">
+                    Distinct Hazard
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       </div>
     `;

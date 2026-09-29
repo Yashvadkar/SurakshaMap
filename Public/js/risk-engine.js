@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const cfg = window.SURAKSHAMAP_CONFIG?.app || {};
+  const cfg = (typeof window !== 'undefined' && window.SURAKSHAMAP_CONFIG?.app) ? window.SURAKSHAMAP_CONFIG.app : {};
   const DEFAULTS = {
     hotspotRadiusMeters: cfg.hotspotRadiusMeters || 200,
     hotspotMinReports: cfg.hotspotMinReports || 2,
@@ -132,8 +132,95 @@
     return recs[(category || '').toLowerCase()] || recs.other;
   }
 
-  window.SurakshaRisk = {
+  
+  /**
+   * Evaluates proximity and duplicate candidates for a target report.
+   * Enforces strict rules:
+   * 1. Category Isolation: Only reports of the EXACT same category can be considered duplicate candidates.
+   * 2. Strict Distance Cap: Hard limit (default 100m). Reports > 100m (and especially > 1000m) are NEVER duplicate candidates.
+   * 3. Co-located Different Hazards: Reports of different categories within direct proximity (<= 50m) are strictly classified as co-located independent hazards, NOT duplicates.
+   */
+  function analyzeDuplicateClusters(targetReport, allReports, opts = {}) {
+    const maxDuplicateRadius = opts.maxDuplicateRadiusMeters || 100;
+    const directCollisionRadius = opts.directCollisionRadiusMeters || 50;
+    const coLocatedRadius = opts.coLocatedRadiusMeters || 50;
+
+    if (!targetReport || !hasValidLocation(targetReport) || !Array.isArray(allReports)) {
+      return {
+        duplicateCandidates: [],
+        directCollisionCount: 0,
+        coLocatedHazards: [],
+        hasDuplicates: false,
+        hasCoLocated: false
+      };
+    }
+
+    const targetCat = (targetReport.category || '').trim().toLowerCase();
+
+    const otherReports = allReports.filter(r => {
+      if (!r || r.id === targetReport.id) return false;
+      if (r.status === 'rejected' || r.status === 'ai_rejected') return false;
+      return hasValidLocation(r);
+    });
+
+    const duplicateCandidates = [];
+    const coLocatedHazards = [];
+
+    for (const r of otherReports) {
+      const distance = Math.round(haversineDistance(
+        targetReport.latitude, targetReport.longitude,
+        r.latitude, r.longitude
+      ));
+
+      const rCat = (r.category || '').trim().toLowerCase();
+      const isSameCategory = rCat === targetCat;
+
+      if (isSameCategory) {
+        // STRICT RULE: Only consider duplicate if within legitimate duplicate radius (<= 100m)
+        // Reports > 100m (and especially > 1000m) are NOT duplicates!
+        if (distance <= maxDuplicateRadius) {
+          duplicateCandidates.push({
+            report: r,
+            distance,
+            sameCategory: true
+          });
+        }
+      } else {
+        // Different category: ONLY consider as co-located hazard if within 50m
+        if (distance <= coLocatedRadius) {
+          coLocatedHazards.push({
+            report: r,
+            distance,
+            sameCategory: false
+          });
+        }
+      }
+    }
+
+    duplicateCandidates.sort((a, b) => a.distance - b.distance);
+    coLocatedHazards.sort((a, b) => a.distance - b.distance);
+
+    const directCollisionCount = duplicateCandidates.filter(d => d.distance <= directCollisionRadius).length;
+
+    return {
+      duplicateCandidates,
+      directCollisionCount,
+      coLocatedHazards,
+      hasDuplicates: duplicateCandidates.length > 0,
+      hasCoLocated: coLocatedHazards.length > 0
+    };
+  }
+
+  const SurakshaRisk = {
     calculateReportScore, classifyRisk, groupIntoHotspots,
-    haversineDistance, hasValidLocation, getRecommendation
+    haversineDistance, hasValidLocation, getRecommendation,
+    analyzeDuplicateClusters
   };
+
+  if (typeof window !== 'undefined') {
+    window.SurakshaRisk = SurakshaRisk;
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SurakshaRisk;
+  }
 })();

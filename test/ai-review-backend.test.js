@@ -276,3 +276,89 @@ test('Civic category fallback templates generate actionable descriptions for all
     assert.ok(text && text.length > 20, `Template for ${cat} must be comprehensive`);
   }
 });
+
+
+describe('Duplicate Cluster & Category Isolation Logic', () => {
+  // Mock SurakshaRisk.analyzeDuplicateClusters function
+  const targetReport = {
+    id: 'rpt_target_1',
+    category: 'broken streetlight',
+    latitude: 19.07619,
+    longitude: 72.87765,
+    trackingToken: 'SM-7FGXC4',
+    status: 'pending_review'
+  };
+
+  const nearbySameCat = {
+    id: 'rpt_same_cat_21m',
+    category: 'broken streetlight',
+    latitude: 19.07638,
+    longitude: 72.87765, // ~21m north
+    trackingToken: 'SM-TEST-279693',
+    status: 'pending_review'
+  };
+
+  const nearbyDifferentCat = {
+    id: 'rpt_diff_cat_28m',
+    category: 'open manhole',
+    latitude: 19.07619,
+    longitude: 72.87791, // ~28m east
+    trackingToken: 'SM-8F7LX7',
+    status: 'resolved'
+  };
+
+  const distantSameCat = {
+    id: 'rpt_distant_1483m',
+    category: 'broken streetlight',
+    latitude: 19.0895,
+    longitude: 72.87765, // ~1483m north
+    trackingToken: 'SM-F8G4M9',
+    status: 'verified'
+  };
+
+  const allReports = [targetReport, nearbySameCat, nearbyDifferentCat, distantSameCat];
+
+  // Load implementation
+  const riskEngine = require('../js/risk-engine.js');
+
+  test('analyzeDuplicateClusters strictly isolates same-category candidates and enforces <= 100m threshold', () => {
+    const analysis = riskEngine.analyzeDuplicateClusters(targetReport, allReports, {
+      maxDuplicateRadiusMeters: 100,
+      directCollisionRadiusMeters: 50,
+      coLocatedRadiusMeters: 50
+    });
+
+    // 1. Must include nearby same category report
+    assert.equal(analysis.duplicateCandidates.length, 1);
+    assert.equal(analysis.duplicateCandidates[0].report.trackingToken, 'SM-TEST-279693');
+    assert.equal(analysis.duplicateCandidates[0].sameCategory, true);
+    assert.ok(analysis.duplicateCandidates[0].distance <= 50);
+
+    // 2. Direct collision count must only count same-category reports <= 50m
+    assert.equal(analysis.directCollisionCount, 1);
+
+    // 3. Must NEVER include distant report (1483m) in duplicateCandidates
+    const hasDistant = analysis.duplicateCandidates.some(c => c.report.trackingToken === 'SM-F8G4M9');
+    assert.equal(hasDistant, false, 'Reports > 100m (and > 1000m) must NEVER be duplicate candidates');
+
+    // 4. Must NEVER include different category (open manhole) in duplicateCandidates
+    const hasManholeAsDup = analysis.duplicateCandidates.some(c => c.report.category === 'open manhole');
+    assert.equal(hasManholeAsDup, false, 'Different categories must NEVER be duplicate candidates');
+
+    // 5. Different category report within 50m must be classified under coLocatedHazards
+    assert.equal(analysis.coLocatedHazards.length, 1);
+    assert.equal(analysis.coLocatedHazards[0].report.trackingToken, 'SM-8F7LX7');
+    assert.equal(analysis.coLocatedHazards[0].sameCategory, false);
+  });
+
+  test('analyzeDuplicateClusters returns empty candidates when all same-category reports are > 1000m away', () => {
+    const onlyDistant = [targetReport, distantSameCat];
+    const analysis = riskEngine.analyzeDuplicateClusters(targetReport, onlyDistant, {
+      maxDuplicateRadiusMeters: 100
+    });
+
+    assert.equal(analysis.duplicateCandidates.length, 0);
+    assert.equal(analysis.directCollisionCount, 0);
+    assert.equal(analysis.hasDuplicates, false);
+  });
+});
