@@ -367,9 +367,7 @@
               <strong style="color:var(--c-primary);font-size:0.85rem;">
                 AI Audit: ${report.aiReview ? (report.aiReview.genuine ? `Genuine Hazard (${Math.round((report.aiReview.confidence || 0.94) * 100)}% Confidence)` : 'Flagged Incident') : 'Pending Verification'}
               </strong>
-              <span style="font-size:0.7rem;padding:1px 6px;border-radius:4px;background:rgba(99, 102, 241, 0.15);color:var(--c-primary);">
-                ${report.aiReview?.model || 'Gemini AI Verifier'}
-              </span>
+              
             </div>
             <button type="button" class="btn btn-secondary btn-xs" id="btn-modal-rerun-ai" style="font-size:0.7rem;padding:2px 8px;">
               🔄 Re-run AI Audit
@@ -403,9 +401,7 @@
           <!-- Section 1: Same Category Duplicate Candidates (<= 100m) -->
           ${duplicateCandidates.length > 0 ? `
             <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
-              <div style="font-size:0.7rem;font-weight:600;color:var(--c-warning);text-transform:uppercase;letter-spacing:0.04em;">
-                Same Category Candidates (${duplicateCandidates.length})
-              </div>
+              
               ${duplicateCandidates.map(n => `
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--c-surface-card);border:1px solid rgba(234, 88, 12, 0.25);border-radius:var(--radius-sm);font-size:0.78rem;">
                   <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
@@ -425,28 +421,6 @@
               ✓ No identical-category duplicate hazards within 100m radius.
             </p>
           `}
-
-          <!-- Section 2: Co-located Different Category Incidents (<= 50m) -->
-          ${coLocatedHazards.length > 0 ? `
-            <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--c-border);">
-              <div style="font-size:0.7rem;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.04em;">
-                Distinct Co-located Incidents (< 50m, Different Category)
-              </div>
-              ${coLocatedHazards.map(c => `
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--c-surface-card);border:1px solid var(--c-border);border-radius:var(--radius-sm);font-size:0.78rem;opacity:0.85;">
-                  <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    <span>${SurakshaUI.getCategoryIcon(c.report.category)}</span>
-                    <span style="white-space:nowrap;color:var(--c-text);font-weight:500;">${SurakshaUI.getCategoryLabel(c.report.category)}</span>
-                    <code style="font-size:0.7rem;color:var(--c-text-muted);font-family:var(--font-mono);">#${c.report.trackingToken}</code>
-                    <span class="badge badge-low" style="font-size:0.68rem;padding:1px 6px;">${c.distance}m</span>
-                  </div>
-                  <span style="font-size:0.7rem;color:var(--c-text-muted);font-style:italic;">
-                    Distinct Hazard
-                  </span>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
         </div>
       </div>
     `;
