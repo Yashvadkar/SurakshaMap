@@ -288,7 +288,12 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="report-description">Description</label>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xs);">
+              <label class="form-label" for="report-description" style="margin-bottom:0;">Description</label>
+              <button type="button" id="btn-ai-suggest-desc" class="btn-ai-suggest" title="AI Writing Assistant — Generate or improve your description">
+                <span class="ai-sparkle">✨</span> <span id="ai-btn-text">AI Assist</span>
+              </button>
+            </div>
             <textarea id="report-description" class="form-textarea" placeholder="Describe the hazard — location details, time of day, how long it's been there..." rows="4"></textarea>
             <div class="form-hint">Be specific. Include landmarks, street names, or building references.</div>
           </div>

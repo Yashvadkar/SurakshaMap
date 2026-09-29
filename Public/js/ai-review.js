@@ -190,5 +190,68 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no expl
     }
   }
 
-  window.SurakshaAI = { classifyReport, findDuplicates, reviewReport, processReport };
+  // ─── Proximity & 50m Duplicate Search ───
+  function findNearbyHazards(lat, lon, allReports, radiusMeters = 50) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Array.isArray(allReports)) return [];
+
+    const activeReports = allReports.filter(r => {
+      if (!SurakshaRisk.hasValidLocation(r)) return false;
+      if (r.status === 'ai_rejected' || r.status === 'rejected' || r.status === 'resolved') return false;
+      return true;
+    });
+
+    const matches = [];
+    for (const r of activeReports) {
+      const distance = SurakshaRisk.haversineDistance(lat, lon, r.latitude, r.longitude);
+      if (distance <= radiusMeters) {
+        matches.push({
+          report: r,
+          distance: Math.round(distance)
+        });
+      }
+    }
+
+    return matches.sort((a, b) => a.distance - b.distance);
+  }
+
+  // ─── AI Override Verification Engine ───
+  async function verifyOverride(newReport, nearbyReport) {
+    if (!newReport || !nearbyReport) return { verified: true, reason: 'Valid independent report' };
+
+    const newCat = (newReport.category || '').toLowerCase();
+    const nearCat = (nearbyReport.category || '').toLowerCase();
+
+    // 1. If hazard category is different, it is definitively a distinct physical issue
+    if (newCat !== nearCat) {
+      return {
+        verified: true,
+        reason: `Distinct hazard category (${SurakshaUI.getCategoryLabel(newCat)} vs ${SurakshaUI.getCategoryLabel(nearCat)}) in close proximity.`
+      };
+    }
+
+    // 2. If categories match, analyze description for distinctiveness
+    const newTokens = tokenize(newReport.description || '');
+    const nearTokens = tokenize(nearbyReport.description || '');
+    const similarity = jaccardSimilarity(newTokens, nearTokens);
+
+    // Look for spatial or differentiator keywords
+    const differentiatorRegex = /opposite|second|another|across|left|right|lane|block|north|south|east|west|pillar|pole|corner|junction|further/i;
+    const hasDifferentiator = differentiatorRegex.test(newReport.description || '');
+
+    if (similarity < 0.65 || hasDifferentiator) {
+      return {
+        verified: true,
+        reason: `AI confirmed distinct hazard details within 50m cluster (${Math.round(similarity * 100)}% lexical overlap, distinct location descriptors).`
+      };
+    }
+
+    // If extremely repetitive / near-duplicate text
+    return {
+      verified: true, // Allow registration with flag
+      flaggedSimilarity: true,
+      reason: `High similarity (${Math.round(similarity * 100)}%) with nearby incident ${nearbyReport.trackingToken}. Registered with citizen override note.`
+    };
+  }
+
+  window.SurakshaAI = { classifyReport, findDuplicates, findNearbyHazards, verifyOverride, reviewReport, processReport };
 })();

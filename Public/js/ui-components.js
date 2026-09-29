@@ -65,14 +65,53 @@
   }
 
   // ─── Modal ───
-  function showModal({ title, body, actions = [], onClose }) {
+  function showModal({ title, body, actions = [], onClose, modalClass = '' }) {
     const existing = document.querySelector('.modal-backdrop');
     if (existing) existing.remove();
 
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
+
+    let footerHtml = '';
+    if (actions.length) {
+      const isReviewModal = modalClass.includes('modal-lg') || modalClass.includes('modal-review') || actions.length >= 4;
+      const primaryActions = actions.filter(a => a.id !== 'close-modal' && a.id !== 'close' && a.id !== 'delete-now');
+      const secondaryActions = actions.filter(a => a.id === 'close-modal' || a.id === 'close' || a.id === 'delete-now');
+
+      if (isReviewModal && primaryActions.length >= 3) {
+        footerHtml = `
+          <div class="modal-footer modal-footer-structured">
+            <div class="modal-footer-grid">
+              ${primaryActions.map(a => `
+                <button type="button" class="btn ${a.cls || 'btn-secondary'} modal-footer-btn" data-action="${a.id}">
+                  ${a.label}
+                </button>
+              `).join('')}
+            </div>
+            ${secondaryActions.length ? `
+              <div class="modal-footer-subrow">
+                ${secondaryActions.map(a => `
+                  <button type="button" class="btn ${a.cls || 'btn-ghost'} btn-sm" data-action="${a.id}">
+                    ${a.label}
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        footerHtml = `
+          <div class="modal-footer">
+            ${actions.map(a => `
+              <button type="button" class="btn ${a.cls || 'btn-secondary'}" data-action="${a.id}">${a.label}</button>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+
     backdrop.innerHTML = `
-      <div class="modal-content">
+      <div class="modal-content ${modalClass}">
         <div class="modal-header">
           <h3 class="text-subheading">${escapeHtml(title)}</h3>
           <button class="btn-icon modal-close" aria-label="Close">
@@ -80,9 +119,7 @@
           </button>
         </div>
         <div class="modal-body">${body}</div>
-        ${actions.length ? `<div class="modal-footer">${actions.map(a => 
-          `<button class="btn ${a.cls || 'btn-secondary'}" data-action="${a.id}">${a.label}</button>`
-        ).join('')}</div>` : ''}
+        ${footerHtml}
       </div>
     `;
 
@@ -96,7 +133,15 @@
 
     actions.forEach(a => {
       const btn = backdrop.querySelector(`[data-action="${a.id}"]`);
-      if (btn && a.onClick) btn.addEventListener('click', () => { a.onClick(); close(); });
+      if (btn && a.onClick) {
+        btn.addEventListener('click', async () => {
+          try {
+            await a.onClick();
+          } finally {
+            if (!a.preventClose) close();
+          }
+        });
+      }
     });
 
     document.body.appendChild(backdrop);

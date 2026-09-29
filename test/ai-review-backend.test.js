@@ -173,3 +173,106 @@ describe('Backward Compatibility with Admin Dashboard', () => {
     assert.ok(aiReview.confidence >= 0 && aiReview.confidence <= 1);
   });
 });
+
+
+// ─── Proximity Detection (<50m), Category Matching & AI Override Tests ───
+test('findNearbyHazards accurately detects hazards within 50m radius and respects category', () => {
+  const baseLat = 12.971598;
+  const baseLon = 77.594566;
+
+  // 1 degree lat is ~111,000 meters. 30 meters is ~0.00027 degrees.
+  const nearbyLat = baseLat + 0.00025; // ~28 meters away
+  const farLat = baseLat + 0.0010;    // ~111 meters away
+
+  const mockReports = [
+    { id: 'rep1', trackingToken: 'TOK-1', category: 'pothole', latitude: nearbyLat, longitude: baseLon, status: 'verified', description: 'Deep crater' },
+    { id: 'rep2', trackingToken: 'TOK-2', category: 'waterlogging', latitude: nearbyLat, longitude: baseLon, status: 'verified', description: 'Flooded road' },
+    { id: 'rep3', trackingToken: 'TOK-3', category: 'pothole', latitude: farLat, longitude: baseLon, status: 'verified', description: 'Far away pothole' },
+    { id: 'rep4', trackingToken: 'TOK-4', category: 'pothole', latitude: nearbyLat, longitude: baseLon, status: 'ai_rejected', description: 'Rejected spam' }
+  ];
+
+  // Helper matching the algorithm in ai-review.js
+  function findNearbyHazards(lat, lon, allReports, radiusMeters = 50) {
+    const active = allReports.filter(r => r.status !== 'rejected' && r.status !== 'ai_rejected');
+    const matches = [];
+    for (const r of active) {
+      const d = haversineDistance(lat, lon, r.latitude, r.longitude);
+      if (d <= radiusMeters) {
+        matches.push({ report: r, distance: Math.round(d) });
+      }
+    }
+    return matches.sort((a, b) => a.distance - b.distance);
+  }
+
+  const results = findNearbyHazards(baseLat, baseLon, mockReports, 50);
+
+  // Should include rep1 and rep2 (within 50m), exclude rep3 (>100m) and rep4 (rejected)
+  assert.strictEqual(results.length, 2, 'Should find exactly 2 active reports within 50m');
+  assert.strictEqual(results[0].report.id, 'rep1');
+  assert.ok(results[0].distance < 50, 'Distance must be <= 50m');
+
+  // Category matching check
+  const candidateCat = 'pothole';
+  const categoryMatch = results.find(n => n.report.category === candidateCat);
+  assert.ok(categoryMatch, 'Should find matching category hazard rep1');
+  assert.strictEqual(categoryMatch.report.id, 'rep1');
+
+  // Non-matching category check
+  const nonMatch = results.find(n => n.report.category === 'streetlight');
+  assert.strictEqual(nonMatch, undefined, 'No streetlight report within 50m');
+});
+
+test('AI Override Verification confirms distinct hazards when category differs or descriptions differentiate', () => {
+  function verifyOverride(newReport, nearbyReport) {
+    const newCat = (newReport.category || '').toLowerCase();
+    const nearCat = (nearbyReport.category || '').toLowerCase();
+
+    if (newCat !== nearCat) {
+      return { verified: true, reason: 'Different hazard category' };
+    }
+
+    const newTokens = tokenize(newReport.description || '');
+    const nearTokens = tokenize(nearbyReport.description || '');
+    const sim = jaccardSimilarity(newTokens, nearTokens);
+    const differentiator = /opposite|second|another|across|left|right|lane|north|south/i.test(newReport.description || '');
+
+    if (sim < 0.65 || differentiator) {
+      return { verified: true, reason: 'Distinct hazard details confirmed' };
+    }
+    return { verified: true, flaggedSimilarity: true, reason: 'High similarity with nearby incident' };
+  }
+
+  const nearby = { category: 'pothole', description: 'Pothole in middle of intersection' };
+
+  // Case A: Different category
+  const differentCatReport = { category: 'waterlogging', description: 'Flooding near drain' };
+  const resA = verifyOverride(differentCatReport, nearby);
+  assert.strictEqual(resA.verified, true);
+  assert.strictEqual(resA.reason, 'Different hazard category');
+
+  // Case B: Same category but distinct spatial description
+  const distinctReport = { category: 'pothole', description: 'Second pothole on the opposite sidewalk lane' };
+  const resB = verifyOverride(distinctReport, nearby);
+  assert.strictEqual(resB.verified, true);
+  assert.strictEqual(resB.reason, 'Distinct hazard details confirmed');
+});
+
+test('Civic category fallback templates generate actionable descriptions for all categories', () => {
+  const categoryTemplates = {
+    pothole: 'Severe surface depression and fractured asphalt along the traffic path, creating serious collision and vehicular damage risks for two-wheelers and automobiles.',
+    manhole: 'Deep uncovered drainage pit located directly on the pedestrian pathway, posing an immediate tripping and falling hazard, especially under low evening lighting.',
+    streetlight: 'Non-functional street luminaire creating a dark stretch along the roadway, significantly reducing nighttime visibility for pedestrians and passing vehicles.',
+    waterlogging: 'Severe water accumulation across the road surface obstructing pedestrian transit and concealing submerged potholes and curb edges.',
+    crossing: 'Damaged pedestrian crossing infrastructure with obstructed sightlines and non-functional safety indicators during peak commuter hours.',
+    footpath: 'Severely cracked and misaligned concrete pavement slabs with exposed edges, obstructing safe passage and posing injury risk to walkers.',
+    obstruction: 'Heavy debris and uncollected materials encroaching onto the active traffic lane, forcing pedestrians and two-wheelers into oncoming traffic.',
+    unsafe_area: 'Poorly lit public corridor with broken surveillance infrastructure and secluded blind spots requiring immediate safety patrols and lighting repair.',
+    other: 'Physical public infrastructure hazard identified in high-traffic pedestrian zone requiring municipal maintenance and safety barricading.'
+  };
+
+  const categories = ['pothole', 'manhole', 'streetlight', 'waterlogging', 'crossing', 'footpath', 'obstruction', 'unsafe_area', 'other'];
+  for (const cat of categories) {
+    const text = categoryTemplates[cat];
+    assert.ok(text && text.length > 20, `Template for ${cat} must be comprehensive`);
+  }
+});

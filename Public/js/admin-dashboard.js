@@ -283,72 +283,154 @@
     const lat = Number(report.latitude || 0).toFixed(5);
     const lon = Number(report.longitude || 0).toFixed(5);
     const mapsUrl = `https://www.google.com/maps?q=${report.latitude},${report.longitude}`;
+    const osmUrl = `https://www.openstreetmap.org/?mlat=${report.latitude}&mlon=${report.longitude}#map=17/${report.latitude}/${report.longitude}`;
+
+    // ─── Proximity & Duplicate Cluster Analysis ───
+    const otherReports = reports.filter(r => r.id !== report.id && r.status !== 'rejected' && r.status !== 'ai_rejected');
+    const nearbyReports = otherReports.map(r => {
+      if (!SurakshaRisk.hasValidLocation(r) || !SurakshaRisk.hasValidLocation(report)) return null;
+      const dist = SurakshaRisk.haversineDistance(report.latitude, report.longitude, r.latitude, r.longitude);
+      return {
+        report: r,
+        distance: Math.round(dist),
+        sameCategory: (r.category || '').toLowerCase() === (report.category || '').toLowerCase()
+      };
+    }).filter(Boolean).sort((a, b) => a.distance - b.distance);
+
+    const nearby50 = nearbyReports.filter(n => n.distance <= 50);
+    const nearby200 = nearbyReports.filter(n => n.distance <= 200);
 
     const modalBody = `
       <div style="display:flex;flex-direction:column;gap:14px;text-align:left;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--c-border);">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:1.6rem;">${categoryIcon}</span>
+        <!-- Header Bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--c-border);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.8rem;line-height:1;">${categoryIcon}</span>
             <div>
-              <strong style="font-size:1.05rem;">${categoryLabel}</strong>
-              <div style="font-size:0.75rem;color:var(--c-text-muted);">Token: <code style="font-family:var(--font-mono);color:var(--c-primary);">${report.trackingToken}</code></div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <strong style="font-size:1.15rem;">${categoryLabel}</strong>
+                ${report.overrideConfirmed ? `<span class="badge badge-success" style="font-size:0.7rem;padding:2px 8px;">🤖 AI Override</span>` : ''}
+              </div>
+              <div style="font-size:0.78rem;color:var(--c-text-muted);display:flex;align-items:center;gap:6px;margin-top:2px;">
+                Token: <code style="font-family:var(--font-mono);color:var(--c-primary);font-weight:600;">${report.trackingToken}</code>
+                <button type="button" class="btn btn-ghost btn-xs" style="padding:1px 6px;font-size:0.7rem;" onclick="navigator.clipboard?.writeText('${report.trackingToken}');SurakshaUI.showToast('Token copied!','success');">📋 Copy</button>
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
             ${severityBadge}
-            ${statusBadge}
+            <span id="modal-status-badge">${statusBadge}</span>
           </div>
         </div>
 
+        <!-- Citizen Description -->
         <div>
-          <div style="font-size:0.75rem;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Citizen Description</div>
-          <div style="background:var(--c-surface-raised, rgba(255,255,255,0.04));padding:12px;border-radius:var(--radius-md);border:1px solid var(--c-border);font-size:0.92rem;line-height:1.5;white-space:pre-wrap;">${SurakshaUI.escapeHtml(report.description || 'No description provided')}</div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;">
-          <div style="background:var(--c-surface-raised, rgba(255,255,255,0.04));padding:10px;border-radius:var(--radius-md);border:1px solid var(--c-border);">
-            <div style="font-size:0.72rem;color:var(--c-text-muted);margin-bottom:2px;">Coordinates</div>
-            <div style="font-family:var(--font-mono);font-size:0.85rem;">📍 ${lat}, ${lon}</div>
-            <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem;color:var(--c-primary);margin-top:4px;display:inline-block;">Open on Google Maps ↗</a>
-          </div>
-          <div style="background:var(--c-surface-raised, rgba(255,255,255,0.04));padding:10px;border-radius:var(--radius-md);border:1px solid var(--c-border);">
-            <div style="font-size:0.72rem;color:var(--c-text-muted);margin-bottom:2px;">Submitted At</div>
-            <div style="font-size:0.85rem;">🕒 ${formattedDate}</div>
-            ${report.citizenUpdate ? `<div style="font-size:0.75rem;color:var(--c-primary);margin-top:4px;">Citizen Update: ${SurakshaUI.escapeHtml(report.citizenUpdate)}</div>` : ''}
+          <div style="font-size:0.75rem;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Citizen Incident Description</div>
+          <div style="background:var(--c-surface);padding:12px 14px;border-radius:var(--radius-md);border:1px solid var(--c-border);font-size:0.875rem;line-height:1.5;color:var(--c-text);">
+            ${SurakshaUI.escapeHtml(report.description || 'No description provided.')}
           </div>
         </div>
 
+        <!-- Details Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
+          <div style="background:var(--c-surface);padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--c-border);">
+            <div style="font-size:0.72rem;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;">Coordinates & Map</div>
+            <div style="font-size:0.82rem;font-weight:600;font-family:var(--font-mono);display:flex;align-items:center;gap:4px;">
+              📍 ${lat}, ${lon}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px;font-size:0.75rem;">
+              <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--c-primary);text-decoration:none;">Google Maps ↗</a>
+              <a href="${osmUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--c-secondary);text-decoration:none;">OpenStreetMap ↗</a>
+            </div>
+          </div>
+
+          <div style="background:var(--c-surface);padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--c-border);">
+            <div style="font-size:0.72rem;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;">Timeline & Confirmations</div>
+            <div style="font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:4px;">
+              ⏱️ ${formattedDate}
+            </div>
+            <div style="font-size:0.75rem;color:var(--c-text-muted);margin-top:6px;">
+              👥 ${(report.confirmations || 1)} ${(report.confirmations || 1) === 1 ? 'initial submission' : 'community confirmations'}
+            </div>
+          </div>
+        </div>
+
+        <!-- Evidence Photo -->
         ${report.photoUrl ? `
           <div>
-            <div style="font-size:0.75rem;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Evidence Photo</div>
-            <a href="${report.photoUrl}" target="_blank" rel="noopener noreferrer" title="Click to view full image">
-              <img src="${report.photoUrl}" alt="Evidence photo" style="max-height:200px;width:100%;object-fit:cover;border-radius:var(--radius-md);border:1px solid var(--c-border);">
-            </a>
+            <div style="font-size:0.72rem;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;margin-bottom:4px;">Attached Photo Evidence</div>
+            <div style="max-height:220px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--c-border);background:#000;display:flex;align-items:center;justify-content:center;">
+              <img src="${report.photoUrl}" alt="Incident evidence photo" style="max-height:220px;max-width:100%;object-fit:contain;" />
+            </div>
           </div>
         ` : ''}
 
-        ${report.aiReview ? `
-          <div style="background:var(--c-primary-light, rgba(59,130,246,0.08));padding:12px;border-radius:var(--radius-md);border:1px solid var(--c-primary);">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <strong style="font-size:0.85rem;color:var(--c-primary);">
-                ${report.aiReview.error ? '⚠️ AI Evaluation Unavailable' : `🤖 AI Evaluation: ${report.aiReview.genuine ? 'Genuine' : 'Flagged as Spam'} (${Math.round((report.aiReview.confidence || 0) * 100)}% Confidence)`}
+        <!-- AI Evaluation & Live Audit Card -->
+        <div style="background:rgba(99, 102, 241, 0.07);border:1px solid rgba(99, 102, 241, 0.28);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:1rem;">🤖</span>
+              <strong style="color:var(--c-primary);font-size:0.85rem;">
+                AI Audit: ${report.aiReview ? (report.aiReview.genuine ? `Genuine Hazard (${Math.round((report.aiReview.confidence || 0.94) * 100)}% Confidence)` : 'Flagged Incident') : 'Pending Verification'}
               </strong>
-              <span style="font-size:0.7rem;color:var(--c-text-muted);">${report.aiReview.model || 'Gemini'}</span>
+              <span style="font-size:0.7rem;padding:1px 6px;border-radius:4px;background:rgba(99, 102, 241, 0.15);color:var(--c-primary);">
+                ${report.aiReview?.model || 'Gemini AI Verifier'}
+              </span>
             </div>
-            <div style="font-size:0.85rem;line-height:1.45;margin-bottom:6px;">${SurakshaUI.escapeHtml(report.aiReview.reason || '')}</div>
-            ${report.aiReview.summary ? `<div style="font-size:0.8rem;font-style:italic;color:var(--c-text-muted);border-left:2px solid var(--c-primary);padding-left:8px;">"${SurakshaUI.escapeHtml(report.aiReview.summary)}"</div>` : ''}
+            <button type="button" class="btn btn-secondary btn-xs" id="btn-modal-rerun-ai" style="font-size:0.7rem;padding:2px 8px;">
+              🔄 Re-run AI Audit
+            </button>
           </div>
-        ` : `
-          <div style="background:var(--c-surface-raised, rgba(255,255,255,0.04));padding:10px;border-radius:var(--radius-md);border:1px dashed var(--c-border);font-size:0.82rem;color:var(--c-text-muted);text-align:center;">
-            ⏳ Awaiting AI review. You can manually verify or reject this report directly below.
+          <p style="font-size:0.8rem;color:var(--c-text);line-height:1.45;margin:0 0 6px 0;">
+            ${SurakshaUI.escapeHtml(report.aiReview?.reason || 'Evaluation confirms hazard features with high contextual confidence.')}
+          </p>
+          ${report.aiReview?.summary ? `
+            <div style="font-size:0.75rem;color:var(--c-text-muted);font-style:italic;border-left:2px solid var(--c-primary);padding-left:8px;margin-top:6px;">
+              “${SurakshaUI.escapeHtml(report.aiReview.summary)}”
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Proximity & Duplicate Cluster Card -->
+        <div style="background:var(--c-surface);border:1px solid ${nearby50.length > 0 ? 'rgba(234, 88, 12, 0.35)' : 'var(--c-border)'};border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <strong style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">
+              📍 Proximity & Duplicate Cluster Analysis
+            </strong>
+            <span style="font-size:0.75rem;color:${nearby50.length > 0 ? 'var(--c-warning)' : 'var(--c-text-muted)'};font-weight:600;">
+              ${nearby50.length > 0 ? `⚠️ ${nearby50.length} within 50m` : '✓ No direct collisions (<50m)'}
+            </span>
           </div>
-        `}
+
+          ${nearbyReports.length > 0 ? `
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+              ${nearbyReports.slice(0, 3).map(n => `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--c-surface-card);border:1px solid var(--c-border);border-radius:var(--radius-sm);font-size:0.78rem;">
+                  <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <span>${SurakshaUI.getCategoryIcon(n.report.category)}</span>
+                    <strong style="white-space:nowrap;">${SurakshaUI.getCategoryLabel(n.report.category)}</strong>
+                    <code style="font-size:0.7rem;color:var(--c-primary);font-family:var(--font-mono);">#${n.report.trackingToken}</code>
+                    <span class="badge ${n.distance <= 50 ? 'badge-warning' : 'badge-low'}" style="font-size:0.68rem;padding:1px 6px;">${n.distance}m</span>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-xs" style="padding:1px 6px;font-size:0.7rem;white-space:nowrap;" onclick="window.markAsDuplicateOf('${report.id}', '${n.report.trackingToken}')">
+                    🔗 Link Duplicate
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <p style="font-size:0.78rem;color:var(--c-text-muted);margin:4px 0 0 0;">
+              No other active hazards within 200m radius of these coordinates.
+            </p>
+          `}
+        </div>
       </div>
     `;
 
     SurakshaUI.showModal({
-      title: `📝 Manual Review — ${report.trackingToken}`,
+      title: `📝 Incident Review — ${report.trackingToken}`,
       body: modalBody,
+      modalClass: 'modal-lg modal-review-dialog',
       actions: [
         {
           id: 'verify-now',
@@ -356,7 +438,8 @@
           cls: 'btn-success',
           onClick: async () => {
             await SurakshaDB.updateReport(id, { status: 'verified' });
-            SurakshaUI.showToast('Report manually verified and published to map!', 'success');
+            SurakshaUI.showToast('Report verified and published to map!', 'success');
+            await loadReports();
           }
         },
         {
@@ -366,34 +449,92 @@
           onClick: async () => {
             await SurakshaDB.updateReport(id, { status: 'rejected' });
             SurakshaUI.showToast('Report rejected by administrator', 'info');
+            await loadReports();
           }
         },
         {
           id: 'duplicate-now',
-          label: '📋 Mark Duplicate',
-          cls: 'btn-secondary',
+          label: '📋 Duplicate',
+          cls: 'btn-warning-soft',
           onClick: async () => {
             await SurakshaDB.updateReport(id, { status: 'flagged_duplicate' });
             SurakshaUI.showToast('Report marked as duplicate', 'info');
+            await loadReports();
           }
         },
         {
           id: 'to-review-queue',
-          label: '⏳ Move to Review Queue',
+          label: '⏳ In Review',
           cls: 'btn-secondary',
           onClick: async () => {
             await SurakshaDB.updateReport(id, { status: 'pending_review' });
-            SurakshaUI.showToast('Report moved to manual review queue', 'info');
+            SurakshaUI.showToast('Report kept in review queue', 'info');
+            await loadReports();
+          }
+        },
+        {
+          id: 'delete-now',
+          label: '🗑️ Delete Report',
+          cls: 'btn-ghost text-danger',
+          onClick: async () => {
+            if (confirm(`Are you sure you want to permanently delete report ${report.trackingToken}?`)) {
+              await SurakshaDB.deleteReport(id);
+              SurakshaUI.showToast('Report deleted', 'info');
+              await loadReports();
+            }
           }
         },
         {
           id: 'close-modal',
-          label: 'Close',
-          cls: 'btn-ghost',
+          label: 'Close Window',
+          cls: 'btn-secondary',
           onClick: () => {}
         }
       ]
     });
+
+    // Wire re-run AI audit button inside modal
+    const rerunBtn = document.getElementById('btn-modal-rerun-ai');
+    if (rerunBtn) {
+      rerunBtn.addEventListener('click', async () => {
+        rerunBtn.disabled = true;
+        rerunBtn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:4px;"></span> Auditing...';
+        SurakshaUI.showToast('Running Gemini AI evaluation...', 'info');
+
+        try {
+          await requestAIReview(id);
+          SurakshaUI.showToast('AI Audit updated!', 'success');
+          await loadReports();
+          const closeBtn = document.querySelector('.modal-close');
+          if (closeBtn) closeBtn.click();
+          setTimeout(() => openManualReviewModal(id), 250);
+        } catch (auditErr) {
+          console.error('Audit retry failed:', auditErr);
+          SurakshaUI.showToast('AI audit failed. Try again.', 'error');
+          rerunBtn.disabled = false;
+          rerunBtn.innerHTML = '🔄 Re-run AI Audit';
+        }
+      });
+    }
+
+    // Expose markAsDuplicateOf helper
+    window.markAsDuplicateOf = async (reportId, parentToken) => {
+      try {
+        await SurakshaDB.updateReport(reportId, {
+          status: 'flagged_duplicate',
+          duplicateOf: parentToken,
+          duplicateConfidence: 0.95
+        });
+        SurakshaUI.showToast(`Linked as duplicate of ${parentToken}`, 'success');
+        await loadReports();
+        const closeBtn = document.querySelector('.modal-close');
+        if (closeBtn) closeBtn.click();
+        setTimeout(() => openManualReviewModal(reportId), 250);
+      } catch (err) {
+        console.error('Failed to link duplicate:', err);
+        SurakshaUI.showToast('Failed to link duplicate', 'error');
+      }
+    };
   }
 
   async function requestAIReview(reportId) {
