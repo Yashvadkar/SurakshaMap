@@ -292,7 +292,7 @@
       coLocatedRadiusMeters: 50
     });
 
-    const { duplicateCandidates, directCollisionCount, coLocatedHazards } = clusterAnalysis;
+    const { duplicateCandidates, directCollisionCount } = clusterAnalysis;
 
     const modalBody = `
       <div style="display:flex;flex-direction:column;gap:14px;text-align:left;">

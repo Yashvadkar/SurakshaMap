@@ -51,6 +51,35 @@
     window.SurakshaDB = createLocalStorageDB();
   }
 
+  // ─── Data Normalization & Sanitization (Ponytail Standard) ───
+  function cleanReportData(r) {
+    if (!r || typeof r !== 'object' || !r.id) return null;
+    if (r.trackingToken && r.trackingToken.includes('TEST')) return null;
+    const lat = Number(r.latitude);
+    const lng = Number(r.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+    const rawSubmitted = r.submittedAt?.toDate?.()?.toISOString() || r.submittedAt;
+    const rawCitizenUpdateAt = r.citizenUpdateAt?.toDate?.()?.toISOString() || r.citizenUpdateAt;
+
+    return {
+      id: String(r.id),
+      trackingToken: r.trackingToken || `SM-${String(r.id).slice(-6).toUpperCase()}`,
+      category: (r.category || 'other').trim().toLowerCase(),
+      description: (r.description || '').trim(),
+      latitude: lat,
+      longitude: lng,
+      severity: ['critical', 'high', 'medium', 'low'].includes(r.severity) ? r.severity : 'medium',
+      submittedAt: rawSubmitted || new Date().toISOString(),
+      status: r.status === 'pending' ? 'pending_review' : (r.status || 'pending_review'),
+      photoUrl: r.photoUrl || null,
+      aiReview: r.aiReview && typeof r.aiReview === 'object' ? r.aiReview : null,
+      duplicateOf: r.duplicateOf || null,
+      citizenUpdate: r.citizenUpdate || null,
+      citizenUpdateAt: rawCitizenUpdateAt || null
+    };
+  }
+
   // ─── Firestore Database Adapter ───
   function createFirestoreDB() {
     const reportsRef = () => window.db.collection('reports');
@@ -78,18 +107,16 @@
 
       async getAllReports() {
         const snap = await reportsRef().orderBy('submittedAt', 'desc').get();
-        return snap.docs.map(doc => {
-          const d = doc.data();
-          return { ...d, id: doc.id, submittedAt: d.submittedAt?.toDate?.()?.toISOString() || d.submittedAt };
-        });
+        return snap.docs
+          .map(doc => cleanReportData({ ...doc.data(), id: doc.id }))
+          .filter(Boolean);
       },
 
       async getReportsByStatus(statusList) {
         const snap = await reportsRef().where('status', 'in', statusList).orderBy('submittedAt', 'desc').get();
-        return snap.docs.map(doc => {
-          const d = doc.data();
-          return { ...d, id: doc.id, submittedAt: d.submittedAt?.toDate?.()?.toISOString() || d.submittedAt };
-        });
+        return snap.docs
+          .map(doc => cleanReportData({ ...doc.data(), id: doc.id }))
+          .filter(Boolean);
       },
 
       async updateReport(id, updates) {
@@ -121,10 +148,9 @@
 
       onReportsChange(callback) {
         return reportsRef().orderBy('submittedAt', 'desc').onSnapshot(snap => {
-          const reports = snap.docs.map(doc => {
-            const d = doc.data();
-            return { ...d, id: doc.id, submittedAt: d.submittedAt?.toDate?.()?.toISOString() || d.submittedAt };
-          });
+          const reports = snap.docs
+            .map(doc => cleanReportData({ ...doc.data(), id: doc.id }))
+            .filter(Boolean);
           callback(reports);
         });
       },
@@ -172,7 +198,7 @@
         description: 'No pedestrian signal at busy junction near D.N. Nagar. Multiple near-miss incidents reported.',
         latitude: 19.1028, longitude: 72.8400, severity: 'high',
         submittedAt: new Date(Date.now() - 48 * 3600000).toISOString(),
-        status: 'pending_review', photoUrl: null, aiReview: null,
+        status: 'pending_review', photoUrl: null, aiReview: { genuine: true, confidence: 0.90, reason: 'High pedestrian risk junction with documented near-miss incidents.' },
         duplicateOf: null, citizenUpdate: null, citizenUpdateAt: null
       },
       {
@@ -193,12 +219,21 @@
       }
     ];
 
+    
+
     function loadReports() {
       try {
         const data = localStorage.getItem(STORAGE_KEY);
         if (!data) { saveReports(SEED_REPORTS); return [...SEED_REPORTS]; }
         const parsed = JSON.parse(data);
-        return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...SEED_REPORTS];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.map(cleanReportData).filter(Boolean);
+          if (cleaned.length > 0) {
+            saveReports(cleaned);
+            return cleaned;
+          }
+        }
+        return [...SEED_REPORTS];
       } catch { return [...SEED_REPORTS]; }
     }
 

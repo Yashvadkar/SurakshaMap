@@ -33,6 +33,7 @@
     'other': 'Physical public infrastructure hazard identified in high-traffic pedestrian zone requiring municipal maintenance and safety barricading.'
   };
 
+  let isDomBound = false;
   function init() {
     currentStep = 1;
     selectedCategory = '';
@@ -40,13 +41,17 @@
     selectedLocation = { lat: null, lng: null };
     selectedPhotoFile = null;
     selectedPhotoPreview = null;
+    duplicateOverrideState = null;
     showStep(1);
-    setupCategorySelection();
-    setupLocationStep();
-    setupSeveritySelection();
-    setupPhotoUpload();
-    setupAiDescriptionSuggestion();
-    setupNavButtons();
+    if (!isDomBound) {
+      isDomBound = true;
+      setupCategorySelection();
+      setupLocationStep();
+      setupSeveritySelection();
+      setupPhotoUpload();
+      setupAiDescriptionSuggestion();
+      setupNavButtons();
+    }
   }
 
   function showStep(step) {
