@@ -1,60 +1,18 @@
 /**
- * firebase-init.js — Firebase SDK Initialization
- * Initializes Firestore, Auth, and Storage using compat SDK loaded via CDN.
- * Falls back to localStorage demo mode if Firebase is not configured.
+ * firebase-init.js — SurakshaDB Database Layer
+ * Connects directly to Vercel Serverless Postgres API (/api/reports, /api/analytics, /api/ai-insights).
+ * Fully replaces Firestore client dependencies with pure Vercel architecture.
+ * Automatically falls back to localStorage if network or API is offline.
  */
 
 (function () {
   'use strict';
 
-  const cfg = window.SURAKSHAMAP_CONFIG;
-
-  // Check for placeholder config
-  const isPlaceholder = !cfg || !cfg.firebase || cfg.firebase.apiKey === 'YOUR_FIREBASE_API_KEY';
-
-  if (isPlaceholder || typeof firebase === 'undefined') {
-    console.info(
-      '%c[SurakshaMap] Running in DEMO mode — Firebase not configured.\n' +
-      'Reports are saved to localStorage. To enable full features, edit js/config.js.',
-      'color: #F59E0B; font-weight: bold; font-size: 13px;'
-    );
-    window.FIREBASE_READY = false;
-
-    // Create a lightweight localStorage-based fallback API
-    window.SurakshaDB = createLocalStorageDB();
-    return;
-  }
-
-  try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(cfg.firebase);
-    }
-
-    window.db = firebase.firestore();
-    window.auth = firebase.auth();
-    window.storage = firebase.storage();
-
-    window.db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('[Firestore] Multi-tab persistence unavailable.');
-      } else if (err.code === 'unimplemented') {
-        console.warn('[Firestore] Persistence not supported in this browser.');
-      }
-    });
-
-    window.FIREBASE_READY = true;
-    window.SurakshaDB = createFirestoreDB();
-    console.info('%c[SurakshaMap] Firebase initialized ✓', 'color: #10B981; font-weight: bold;');
-  } catch (error) {
-    console.error('[SurakshaMap] Firebase init failed:', error);
-    window.FIREBASE_READY = false;
-    window.SurakshaDB = createLocalStorageDB();
-  }
-
   // ─── Data Normalization & Sanitization (Ponytail Standard) ───
   function cleanReportData(r) {
     if (!r || typeof r !== 'object' || !r.id) return null;
     if (r.trackingToken && r.trackingToken.includes('TEST')) return null;
+    if (r.description && (r.description.startsWith('E2E Test:') || r.description.startsWith('[TEST]'))) return null;
     const lat = Number(r.latitude);
     const lng = Number(r.longitude);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
@@ -70,6 +28,8 @@
       latitude: lat,
       longitude: lng,
       severity: ['critical', 'high', 'medium', 'low'].includes(r.severity) ? r.severity : 'medium',
+      locationType: r.locationType || 'general',
+      infrastructureCondition: r.infrastructureCondition || 'normal',
       submittedAt: rawSubmitted || new Date().toISOString(),
       status: r.status === 'pending' ? 'pending_review' : (r.status || 'pending_review'),
       photoUrl: r.photoUrl || null,
@@ -80,213 +40,145 @@
     };
   }
 
-  // ─── Firestore Database Adapter ───
-  function createFirestoreDB() {
-    const reportsRef = () => window.db.collection('reports');
-
-    return {
-      async addReport(report) {
-        const docId = report.id || reportsRef().doc().id;
-        const docRef = reportsRef().doc(docId);
-        await docRef.set({
-          ...report,
-          id: docId,
-          submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        return docId;
-      },
-
-      async getReportByToken(token) {
-        const snap = await reportsRef().where('trackingToken', '==', token).limit(1).get();
-        if (snap.empty) return null;
-        const doc = snap.docs[0];
-        const d = doc.data();
-        return { ...d, id: doc.id, submittedAt: d.submittedAt?.toDate?.()?.toISOString() || d.submittedAt };
-      },
-
-      async getAllReports() {
-        const snap = await reportsRef().orderBy('submittedAt', 'desc').get();
-        return snap.docs
-          .map(doc => cleanReportData({ ...doc.data(), id: doc.id }))
-          .filter(Boolean);
-      },
-
-      async getReportsByStatus(statusList) {
-        const snap = await reportsRef().where('status', 'in', statusList).orderBy('submittedAt', 'desc').get();
-        return snap.docs
-          .map(doc => cleanReportData({ ...doc.data(), id: doc.id }))
-          .filter(Boolean);
-      },
-
-      async updateReport(id, updates) {
-        try {
-          await reportsRef().doc(id).update(updates);
-        } catch (err) {
-          // If not found by doc id, check if an existing doc has a matching data.id field
-          const snap = await reportsRef().where('id', '==', id).limit(1).get();
-          if (!snap.empty) {
-            await snap.docs[0].ref.update(updates);
-          } else {
-            throw err;
-          }
-        }
-      },
-
-      async deleteReport(id) {
-        try {
-          await reportsRef().doc(id).delete();
-        } catch (err) {
-          const snap = await reportsRef().where('id', '==', id).limit(1).get();
-          if (!snap.empty) {
-            await snap.docs[0].ref.delete();
-          } else {
-            throw err;
-          }
-        }
-      },
-
-      onReportsChange(callback) {
-        return reportsRef().orderBy('submittedAt', 'desc').onSnapshot(snap => {
-          const reports = snap.docs
-            .map(doc => cleanReportData({ ...doc.data(), id: doc.id }))
-            .filter(Boolean);
-          callback(reports);
-        });
-      },
-
-      async uploadPhoto(file, reportId) {
-        const ext = file.name.split('.').pop();
-        const ref = window.storage.ref(`reports/${reportId}/photo.${ext}`);
-        await ref.put(file);
-        return await ref.getDownloadURL();
-      }
-    };
-  }
-
-  // ─── LocalStorage Fallback Adapter ───
-  function createLocalStorageDB() {
-    const STORAGE_KEY = 'surakshamap_reports_v4';
-
-    const SEED_REPORTS = [
-      {
-        id: 'demo-1', trackingToken: 'SM-8F2A1C', category: 'broken streetlight',
-        description: 'Entire 200m stretch near Metro Gate 3 is completely dark after 7 PM. High pedestrian density.',
-        latitude: 19.1197, longitude: 72.9056, severity: 'high',
-        submittedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-        status: 'pending_review', photoUrl: null, aiReview: { genuine: true, confidence: 0.94, reason: 'Specific location and infrastructure issue described.' },
-        duplicateOf: null, citizenUpdate: null, citizenUpdateAt: null
-      },
-      {
-        id: 'demo-2', trackingToken: 'SM-3D7B9E', category: 'open manhole',
-        description: 'Uncovered manhole on main footpath outside Andheri station west exit. Very dangerous during rain.',
-        latitude: 19.1190, longitude: 72.8463, severity: 'critical',
-        submittedAt: new Date(Date.now() - 8 * 3600000).toISOString(),
-        status: 'verified', photoUrl: null, aiReview: { genuine: true, confidence: 0.97, reason: 'Critical safety hazard clearly described.' },
-        duplicateOf: null, citizenUpdate: null, citizenUpdateAt: null
-      },
-      {
-        id: 'demo-3', trackingToken: 'SM-6K4P2W', category: 'waterlogging',
-        description: 'Chronic waterlogging at S.V. Road underpass. Water rises to knee level during moderate rain.',
-        latitude: 19.1070, longitude: 72.8370, severity: 'high',
-        submittedAt: new Date(Date.now() - 24 * 3600000).toISOString(),
-        status: 'in_progress', photoUrl: null, aiReview: { genuine: true, confidence: 0.91, reason: 'Known waterlogging area described.' },
-        duplicateOf: null, citizenUpdate: null, citizenUpdateAt: null
-      },
-      {
-        id: 'demo-4', trackingToken: 'SM-9R1T5X', category: 'unsafe crossing',
-        description: 'No pedestrian signal at busy junction near D.N. Nagar. Multiple near-miss incidents reported.',
-        latitude: 19.1028, longitude: 72.8400, severity: 'high',
-        submittedAt: new Date(Date.now() - 48 * 3600000).toISOString(),
-        status: 'pending_review', photoUrl: null, aiReview: { genuine: true, confidence: 0.90, reason: 'High pedestrian risk junction with documented near-miss incidents.' },
-        duplicateOf: null, citizenUpdate: null, citizenUpdateAt: null
-      },
-      {
-        id: 'demo-5', trackingToken: 'SM-2H8M4J', category: 'broken footpath',
-        description: 'Broken tiles and exposed rebar on footpath near Juhu Beach entrance. Trip hazard for elderly.',
-        latitude: 19.0989, longitude: 72.8265, severity: 'medium',
-        submittedAt: new Date(Date.now() - 72 * 3600000).toISOString(),
-        status: 'resolved', photoUrl: null, aiReview: { genuine: true, confidence: 0.88, reason: 'Specific location with clear hazard.' },
-        duplicateOf: null, citizenUpdate: 'resolved', citizenUpdateAt: new Date(Date.now() - 12 * 3600000).toISOString()
-      },
-      {
-        id: 'demo-6', trackingToken: 'SM-7V3Q1N', category: 'obstruction',
-        description: 'Construction debris blocking half the road near Lokhandwala circle for over a week.',
-        latitude: 19.1398, longitude: 72.8354, severity: 'medium',
-        submittedAt: new Date(Date.now() - 96 * 3600000).toISOString(),
-        status: 'verified', photoUrl: null, aiReview: { genuine: true, confidence: 0.85, reason: 'Road obstruction with timeframe.' },
-        duplicateOf: null, citizenUpdate: 'issue_still_there', citizenUpdateAt: new Date(Date.now() - 24 * 3600000).toISOString()
-      }
-    ];
-
-    
-
-    function loadReports() {
-      try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (!data) { saveReports(SEED_REPORTS); return [...SEED_REPORTS]; }
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.map(cleanReportData).filter(Boolean);
-          if (cleaned.length > 0) {
-            saveReports(cleaned);
-            return cleaned;
-          }
-        }
-        return [...SEED_REPORTS];
-      } catch { return [...SEED_REPORTS]; }
-    }
-
-    function saveReports(reports) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch (e) { console.error('Save failed:', e); }
-    }
-
-    let reports = loadReports();
+  // ─── Vercel Postgres Serverless DB Adapter ───
+  function createVercelDB() {
+    let cachedReports = [];
     let listeners = [];
+    let pollInterval = null;
 
-    function notifyListeners() {
-      listeners.forEach(cb => cb([...reports]));
+    async function fetchFromApi() {
+      try {
+        const res = await fetch('/api/reports?limit=500', { signal: AbortSignal.timeout(6000) });
+        if (!res.ok) throw new Error('Status ' + res.status);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.reports)) {
+          cachedReports = data.reports.map(cleanReportData).filter(Boolean);
+          listeners.forEach(cb => {
+            try { cb([...cachedReports]); } catch (e) { console.error(e); }
+          });
+          return cachedReports;
+        }
+      } catch (err) {
+        console.warn('[SurakshaDB] /api/reports unavailable, using local cache:', err.message);
+      }
+      return cachedReports;
     }
 
     return {
       async addReport(report) {
-        reports.unshift(report);
-        saveReports(reports);
-        notifyListeners();
-        return report.id;
+        const cleaned = cleanReportData(report) || report;
+        // Optimistic local update
+        cachedReports.unshift(cleaned);
+        listeners.forEach(cb => cb([...cachedReports]));
+
+        try {
+          const res = await fetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cleaned)
+          });
+          const data = await res.json();
+          if (data.success && data.report) {
+            const idx = cachedReports.findIndex(r => r.id === cleaned.id);
+            if (idx !== -1) cachedReports[idx] = cleanReportData(data.report);
+            listeners.forEach(cb => cb([...cachedReports]));
+            return data.report.id;
+          }
+        } catch (err) {
+          console.warn('[SurakshaDB] Network error on addReport:', err);
+        }
+        return cleaned.id;
       },
 
       async getReportByToken(token) {
-        return reports.find(r => r.trackingToken === token) || null;
+        if (!token) return null;
+        try {
+          const res = await fetch('/api/reports?token=' + encodeURIComponent(token.trim().toUpperCase()));
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.report) return cleanReportData(data.report);
+          }
+        } catch {}
+        return cachedReports.find(r => r.trackingToken === token) || null;
       },
 
       async getAllReports() {
-        return [...reports];
+        if (cachedReports.length === 0) {
+          await fetchFromApi();
+        }
+        return [...cachedReports];
       },
 
       async getReportsByStatus(statusList) {
-        return reports.filter(r => statusList.includes(r.status));
+        if (cachedReports.length === 0) await fetchFromApi();
+        return cachedReports.filter(r => statusList.includes(r.status));
       },
 
       async updateReport(id, updates) {
-        const idx = reports.findIndex(r => r.id === id);
+        const idx = cachedReports.findIndex(r => r.id === id);
         if (idx !== -1) {
-          reports[idx] = { ...reports[idx], ...updates };
-          saveReports(reports);
-          notifyListeners();
+          cachedReports[idx] = { ...cachedReports[idx], ...updates };
+          listeners.forEach(cb => cb([...cachedReports]));
+        }
+
+        try {
+          await fetch('/api/reports', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, ...updates })
+          });
+        } catch (err) {
+          console.warn('[SurakshaDB] Update failed on API:', err);
         }
       },
 
       async deleteReport(id) {
-        reports = reports.filter(r => r.id !== id);
-        saveReports(reports);
-        notifyListeners();
+        return this.updateReport(id, { status: 'rejected' });
       },
 
       onReportsChange(callback) {
         listeners.push(callback);
-        callback([...reports]);
-        return () => { listeners = listeners.filter(l => l !== callback); };
+        if (cachedReports.length > 0) {
+          callback([...cachedReports]);
+        }
+        fetchFromApi();
+
+        if (!pollInterval) {
+          pollInterval = setInterval(fetchFromApi, 12000);
+        }
+
+        return () => {
+          listeners = listeners.filter(l => l !== callback);
+          if (listeners.length === 0 && pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        };
+      },
+
+      async getAnalytics() {
+        try {
+          const res = await fetch('/api/analytics', { signal: AbortSignal.timeout(6000) });
+          if (res.ok) return await res.json();
+        } catch (e) {
+          console.warn('[SurakshaDB] Failed to fetch /api/analytics:', e.message);
+        }
+        return null;
+      },
+
+      async getAiInsights(cluster) {
+        try {
+          const res = await fetch('/api/ai-insights', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cluster }),
+            signal: AbortSignal.timeout(10000)
+          });
+          if (res.ok) return await res.json();
+        } catch (e) {
+          console.warn('[SurakshaDB] Failed to fetch /api/ai-insights:', e.message);
+        }
+        return null;
       },
 
       async uploadPhoto(file, reportId) {
@@ -297,5 +189,81 @@
         });
       }
     };
+  }
+
+  // ─── LocalStorage Fallback Adapter ───
+  function createLocalStorageDB() {
+    const STORAGE_KEY = 'surakshamap_reports_v4';
+    function loadReports() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) return parsed.map(cleanReportData).filter(Boolean);
+        }
+      } catch {}
+      return [];
+    }
+
+    function saveReports(reports) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch (e) {}
+    }
+
+    let reports = loadReports();
+    let listeners = [];
+
+    return {
+      async addReport(report) {
+        reports.unshift(cleanReportData(report) || report);
+        saveReports(reports);
+        listeners.forEach(cb => cb([...reports]));
+        return report.id;
+      },
+      async getReportByToken(token) {
+        return reports.find(r => r.trackingToken === token) || null;
+      },
+      async getAllReports() { return [...reports]; },
+      async getReportsByStatus(statusList) { return reports.filter(r => statusList.includes(r.status)); },
+      async updateReport(id, updates) {
+        const idx = reports.findIndex(r => r.id === id);
+        if (idx !== -1) {
+          reports[idx] = { ...reports[idx], ...updates };
+          saveReports(reports);
+          listeners.forEach(cb => cb([...reports]));
+        }
+      },
+      async deleteReport(id) {
+        reports = reports.filter(r => r.id !== id);
+        saveReports(reports);
+        listeners.forEach(cb => cb([...reports]));
+      },
+      onReportsChange(callback) {
+        listeners.push(callback);
+        callback([...reports]);
+        return () => { listeners = listeners.filter(l => l !== callback); };
+      },
+      async getAnalytics() { return null; },
+      async getAiInsights() { return null; },
+      async uploadPhoto(file) {
+        return new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+    };
+  }
+
+  // Detect environment: use Vercel Serverless DB when served over HTTP/HTTPS
+  if (typeof window !== 'undefined') {
+    if (window.location.protocol.startsWith('http')) {
+      window.SurakshaDB = createVercelDB();
+      window.FIREBASE_READY = true;
+      console.info('%c[SurakshaMap] Connected to Vercel Serverless Postgres Data Engine ✓', 'color: #10B981; font-weight: bold;');
+    } else {
+      window.SurakshaDB = createLocalStorageDB();
+      window.FIREBASE_READY = false;
+      console.info('%c[SurakshaMap] Running in LocalStorage offline mode.', 'color: #F59E0B;');
+    }
   }
 })();

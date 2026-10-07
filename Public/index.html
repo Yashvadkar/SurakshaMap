@@ -1,15 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="SurakshaMap — Community-powered public space safety reporting. Report hazards anonymously, track resolution, and help make your city safer.">
-  <meta name="theme-color" content="#4F46E5">
+  <meta name="description"
+    content="SurakshaMap — Community-powered public space safety reporting. Report hazards anonymously, track resolution, and help make your city safer.">
+  <meta name="theme-color" content="#0D9488">
   <meta property="og:title" content="SurakshaMap — Community Safety Intelligence">
   <meta property="og:description" content="Report public space safety issues anonymously and track them on a live map.">
   <meta property="og:type" content="website">
   <title>SurakshaMap — Community Safety Intelligence</title>
 
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Styles -->
   <link rel="stylesheet" href="css/design-system.css?v=2.8.1">
   <link rel="stylesheet" href="css/animations.css?v=2.8.1">
@@ -23,6 +29,7 @@
 
   <link rel="icon" type="image/png" href="assets/SurakshaMap_logo.png">
 </head>
+
 <body>
 
   <!-- ═══════ Header ═══════ -->
@@ -30,7 +37,7 @@
     <div class="header-inner">
       <a href="#/" class="brand">
         <img src="assets/SurakshaMap_logo.png" alt="SurakshaMap" class="brand-logo" onerror="this.style.display='none'">
-        <span>SurakshaMap</span>
+        <span>SURAKSHA <span style="color:var(--c-primary);font-weight:800;">MAP</span></span>
       </a>
 
       <nav class="nav-links-desktop">
@@ -44,7 +51,9 @@
 
       <div class="header-actions">
         <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
         </button>
         <a href="admin.html" class="btn btn-ghost btn-sm" style="font-size:0.78rem;">Admin</a>
       </div>
@@ -54,89 +63,100 @@
   <!-- ═══════ Main Content ═══════ -->
   <main>
 
-    <!-- ────── HOME VIEW ────── -->
+    <!-- ────── HOME VIEW (Reference Architecture from https://surakshamap.vercel.app/) ────── -->
     <div id="view-home" class="view-container active-view">
-      <div class="hero">
-        <div class="hero-content container">
-          <h1 class="hero-title animate-fade-in-up">
-            Make Your City <span class="text-gradient">Safer Together</span>
-          </h1>
-          <p class="hero-subtitle animate-fade-in-up" style="animation-delay:100ms;">
-            Report public space hazards anonymously. Track resolution in real-time. No signup needed.
-          </p>
-          <div class="hero-cta-group animate-fade-in-up" style="animation-delay:200ms;">
-            <a href="#/report" class="btn btn-primary btn-lg ripple-container">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      <div class="home-hero">
+        <div class="hero-left">
+          <div class="hero-eyebrow">
+            <span class="eyebrow-dot"></span>
+            Live Safety Intelligence
+          </div>
+          <h1>Spot it.<br><span class="hero-accent">Make it safer.</span></h1>
+          <p class="hero-sub">Suraksha Map turns anonymous community reports into a real-time safety layer — so cities can act faster, smarter.</p>
+          <div class="hero-actions">
+            <a href="#/report" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="12" y2="12"/></svg>
               Report an Issue
             </a>
-            <a href="#/map" class="btn btn-secondary btn-lg">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-              View Live Map
-            </a>
+            <a href="#/map" class="btn btn-outline">Explore Safety Map →</a>
           </div>
+          <div class="hero-metrics" id="hero-metrics">
+            <div class="hm-item">
+              <span class="hm-val" id="metric-hotspots">0</span>
+              <span class="hm-label">Hotspots</span>
+            </div>
+            <div class="hm-divider"></div>
+            <div class="hm-item">
+              <span class="hm-val" id="metric-reports">0</span>
+              <span class="hm-label">Reports</span>
+            </div>
+            <div class="hm-divider"></div>
+            <div class="hm-item">
+              <span class="hm-val" id="metric-resolved">0</span>
+              <span class="hm-label">Resolved</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-map-wrap">
+          <div id="home-map"></div>
+          <div class="map-overlay-badge" id="map-overlay-badge">
+            <div class="mob-label">⚠ Safety Layer</div>
+            <strong id="mob-area-name">Live Hotspot Intelligence</strong>
+            <span class="mob-meta" id="mob-area-meta">Real-time geo analysis</span>
+          </div>
+          <a href="#/map" class="map-expand-btn" title="Open full map">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            Full Map
+          </a>
         </div>
       </div>
 
-      <div class="container" style="margin-top:-1.5rem;position:relative;z-index:2;">
-        <!-- Stats -->
-        <div class="stats-grid reveal" id="home-stats">
-          <div class="stat-card">
-            <div class="stat-value primary" id="home-total">0</div>
-            <div class="stat-label">Total Reports</div>
+      <section class="how-section">
+        <div class="container">
+          <div class="section-head">
+            <div class="label" style="color:var(--c-coral);font-weight:700;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;display:block;">How It Works</div>
+            <h2>Four steps to safer streets</h2>
           </div>
-          <div class="stat-card">
-            <div class="stat-value warning" id="home-active">0</div>
-            <div class="stat-label">Active Issues</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value success" id="home-resolved">0</div>
-            <div class="stat-label">Resolved</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value danger" id="home-hotspots">0</div>
-            <div class="stat-label">Danger Hotspots</div>
+          <div class="steps-grid">
+            <div class="step-card">
+              <span class="step-icon">📍</span>
+              <div class="step-num">01</div>
+              <h4>Report</h4>
+              <p class="text-muted">Citizens anonymously flag a safety issue or hazard.</p>
+            </div>
+            <div class="step-card">
+              <span class="step-icon">⚡</span>
+              <div class="step-num">02</div>
+              <h4>Analyze</h4>
+              <p class="text-muted">Reports are scored using location, time and severity signals.</p>
+            </div>
+            <div class="step-card">
+              <span class="step-icon">🔥</span>
+              <div class="step-num">03</div>
+              <h4>Detect Hotspots</h4>
+              <p class="text-muted">Recurring patterns and emerging risks are identified automatically.</p>
+            </div>
+            <div class="step-card">
+              <span class="step-icon">✅</span>
+              <div class="step-num">04</div>
+              <h4>Act</h4>
+              <p class="text-muted">The platform surfaces practical, localized interventions for authorities.</p>
+            </div>
           </div>
         </div>
+      </section>
 
-        <!-- How it works -->
-        <div class="page-section reveal">
-          <div class="section-header">
-            <h2 class="section-title">How SurakshaMap Works</h2>
-            <p class="section-subtitle">Simple, anonymous, and transparent safety reporting in 3 steps.</p>
-          </div>
-          <div class="steps-grid stagger-children">
-            <div class="card step-card animate-fade-in-up">
-              <div class="step-number">1</div>
-              <h3 class="step-card-title">Report a Hazard</h3>
-              <p class="step-card-desc">Spot a broken streetlight, pothole, or unsafe area? Report it anonymously in under 60 seconds.</p>
-            </div>
-            <div class="card step-card animate-fade-in-up">
-              <div class="step-number">2</div>
-              <h3 class="step-card-title">AI Reviews It</h3>
-              <p class="step-card-desc">Our AI validates your report, checks for duplicates, and forwards genuine issues to city administrators.</p>
-            </div>
-            <div class="card step-card animate-fade-in-up">
-              <div class="step-number">3</div>
-              <h3 class="step-card-title">Track Resolution</h3>
-              <p class="step-card-desc">Get a unique tracking code. Check status anytime. Mark as resolved when fixed.</p>
-            </div>
+      <section class="cta-section">
+        <div class="cta-inner">
+          <h2>See what your city is reporting.</h2>
+          <p>Join thousands of citizens making their neighborhoods safer — anonymously.</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
+            <a href="#/map" class="btn btn-primary">Open Safety Map</a>
+            <a href="#/track" class="btn btn-outline" style="background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.35);">Track Report</a>
           </div>
         </div>
-
-        <!-- Recent Reports -->
-        <div class="page-section reveal">
-          <div class="section-header">
-            <h2 class="section-title">Recent Reports</h2>
-            <p class="section-subtitle">The latest safety concerns reported by citizens.</p>
-          </div>
-          <div id="home-recent-reports" style="display:flex;flex-direction:column;gap:8px;max-width:640px;margin:0 auto;">
-            <!-- Populated by JS -->
-          </div>
-          <div style="text-align:center;margin-top:1.5rem;">
-            <a href="#/map" class="btn btn-secondary">View All on Map →</a>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
 
     <!-- ────── MAP VIEW ────── -->
@@ -144,6 +164,8 @@
       <div id="map-container">
         <div class="map-controls">
           <button class="map-filter-pill active" data-filter="all">All</button>
+          <button class="map-filter-pill" data-filter="night" style="border-color:#6366f1;">🌙 Night Safety</button>
+          <button class="map-filter-pill" data-filter="accident">💥 Accidents</button>
           <button class="map-filter-pill" data-filter="broken streetlight">💡 Streetlights</button>
           <button class="map-filter-pill" data-filter="open manhole">🕳️ Manholes</button>
           <button class="map-filter-pill" data-filter="waterlogging">🌊 Waterlogging</button>
@@ -153,6 +175,7 @@
         </div>
         <!-- Google Maps Layer Switcher -->
         <div class="map-layer-selector" id="map-layer-selector">
+          <button type="button" id="btn-map-locate-me" class="map-locate-btn" style="margin-right:8px;">📍 My Location</button>
           <button class="map-layer-btn active" data-layer="roadmap">🗺️ Map</button>
           <button class="map-layer-btn" data-layer="satellite">🛰️ Satellite</button>
           <button class="map-layer-btn" data-layer="terrain">🏔️ Terrain</button>
@@ -181,6 +204,92 @@
           <p class="section-subtitle">Anonymous. No signup required. Your identity is never collected.</p>
         </div>
 
+        <!-- Mode Switcher (10s Quick Dispatch vs 5-Step Detailed) -->
+        <div class="report-mode-switcher" style="display:flex;gap:8px;margin-bottom:var(--space-xl);background:var(--c-surface-elevated);padding:5px;border-radius:var(--radius-full);border:1px solid var(--c-border);max-width:440px;margin-left:auto;margin-right:auto;">
+          <button type="button" class="btn btn-sm report-mode-btn" id="btn-mode-quick" style="flex:1;border-radius:var(--radius-full);font-weight:700;">⚡ Quick Report (10s)</button>
+          <button type="button" class="btn btn-sm report-mode-btn active" id="btn-mode-detailed" style="flex:1;border-radius:var(--radius-full);font-weight:700;">📋 Detailed (5 Steps)</button>
+        </div>
+
+        <!-- ────── QUICK REPORT CONTAINER (10-Second High-Urgency Dispatch) ────── -->
+        <div id="quick-report-container" style="display:none;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-xl);padding:var(--space-xl);box-shadow:var(--sh-md);margin-bottom:var(--space-2xl);">
+          <div style="text-align:center;margin-bottom:var(--space-lg);">
+            <div style="display:inline-flex;align-items:center;gap:6px;background:var(--c-primary-light);color:var(--c-primary);padding:4px 12px;border-radius:var(--radius-full);font-size:0.82rem;font-weight:700;margin-bottom:6px;">
+              ⚡ 10-Second High-Urgency Dispatch
+            </div>
+            <h2 class="text-heading" style="font-size:1.35rem;margin-bottom:4px;">Snap. Tag. Send.</h2>
+            <p class="text-muted text-small">Quick submission automatically acquires GPS coordinates and routes directly to the ward desk.</p>
+          </div>
+
+          <!-- Quick GPS Badge -->
+          <div class="quick-gps-banner" style="display:flex;align-items:center;justify-content:space-between;background:var(--c-surface-elevated);border:1px solid var(--c-border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:var(--space-lg);flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.25rem;">📡</span>
+              <div>
+                <div id="quick-gps-status" style="font-size:0.85rem;font-weight:600;">Acquiring GPS location...</div>
+                <div id="quick-gps-landmark" style="font-size:0.75rem;color:var(--c-text-muted);">Auto-detecting neighborhood</div>
+              </div>
+            </div>
+            <button type="button" id="btn-quick-gps-refresh" class="btn btn-secondary btn-sm" style="font-size:0.78rem;">🔄 Re-detect GPS</button>
+          </div>
+
+          <!-- Quick Category Grid -->
+          <div style="margin-bottom:var(--space-lg);">
+            <label class="form-label" style="font-size:0.82rem;font-weight:700;margin-bottom:8px;display:block;">1. Select Hazard Type</label>
+            <div class="quick-category-grid" id="quick-category-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:8px;">
+              <div class="quick-cat-pill" data-category="accident" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>💥</span> <span>Accident</span>
+              </div>
+              <div class="quick-cat-pill" data-category="broken streetlight" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>💡</span> <span>Streetlight</span>
+              </div>
+              <div class="quick-cat-pill" data-category="open manhole" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>🕳️</span> <span>Manhole</span>
+              </div>
+              <div class="quick-cat-pill" data-category="waterlogging" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>🌊</span> <span>Waterlogging</span>
+              </div>
+              <div class="quick-cat-pill" data-category="unsafe crossing" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>🚸</span> <span>Crossing</span>
+              </div>
+              <div class="quick-cat-pill" data-category="broken footpath" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>🧱</span> <span>Footpath</span>
+              </div>
+              <div class="quick-cat-pill" data-category="harassment spot" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>🚨</span> <span>Unsafe Area</span>
+              </div>
+              <div class="quick-cat-pill" data-category="other" style="cursor:pointer;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--c-border);background:var(--c-surface);display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;transition:all var(--t-fast);">
+                <span>⚠️</span> <span>Other</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Evidence Photo -->
+          <div style="margin-bottom:var(--space-lg);">
+            <label class="form-label" style="font-size:0.82rem;font-weight:700;margin-bottom:8px;display:block;">2. Photo Evidence (Optional)</label>
+            <div id="quick-photo-dropzone" style="border:2px dashed var(--c-border);border-radius:var(--radius-lg);padding:var(--space-md);text-align:center;cursor:pointer;background:var(--c-surface-elevated);transition:border-color var(--t-fast);">
+              <input type="file" id="quick-photo-input" accept="image/*" capture="environment" style="display:none;">
+              <div id="quick-photo-prompt" style="font-size:0.85rem;color:var(--c-text-muted);">
+                📷 Tap to capture or upload photo (EXIF stripped)
+              </div>
+              <div id="quick-photo-preview-wrap" style="display:none;margin-top:8px;">
+                <img id="quick-photo-preview" src="" alt="Preview" style="max-height:120px;border-radius:var(--radius-md);object-fit:cover;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick 1-Line Description -->
+          <div style="margin-bottom:var(--space-xl);">
+            <label class="form-label" for="quick-desc-input" style="font-size:0.82rem;font-weight:700;margin-bottom:8px;display:block;">3. Quick Note</label>
+            <input type="text" id="quick-desc-input" class="form-input" placeholder="e.g. Deep crater near bus stand outside school" style="font-size:0.88rem;">
+          </div>
+
+          <button type="button" id="btn-submit-quick-report" class="btn btn-primary btn-block" style="padding:14px;font-size:1rem;font-weight:700;">
+            🚀 Dispatch Quick Report (10s)
+          </button>
+        </div>
+
+        <!-- ────── DETAILED WIZARD CONTAINER ────── -->
+        <div id="detailed-wizard-container">
         <!-- Progress Bar -->
         <div class="progress-bar" style="margin-bottom:var(--space-xl);">
           <div class="progress-fill" id="wizard-progress-fill" style="width:20%;"></div>
@@ -217,8 +326,14 @@
         <!-- Step 1: Category -->
         <div class="wizard-step-content active" id="wizard-step-1">
           <h2 class="text-heading" style="margin-bottom:4px;">What's the issue?</h2>
-          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Select the category that best describes the hazard.</p>
+          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Select the category that best
+            describes the hazard.</p>
           <div class="category-grid stagger-children" id="category-grid">
+            <div class="category-option animate-fade-in-up" data-category="accident">
+              <span class="category-icon">💥</span>
+              <span class="category-name">Road Accident</span>
+            </div>
+
             <div class="category-option animate-fade-in-up" data-category="broken streetlight">
               <span class="category-icon">💡</span>
               <span class="category-name">Broken Streetlight</span>
@@ -258,8 +373,13 @@
         <div class="wizard-step-content" id="wizard-step-2">
           <h2 class="text-heading" style="margin-bottom:4px;">Where is this located?</h2>
           <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Use GPS or click on the map to place a pin.</p>
-          <button type="button" id="btn-use-gps" class="btn btn-secondary btn-block" style="margin-bottom:var(--space-md);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+          <button type="button" id="btn-use-gps" class="btn btn-secondary btn-block"
+            style="margin-bottom:var(--space-md);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+            </svg>
             Use My Current GPS
           </button>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm);">
@@ -269,14 +389,56 @@
               <button type="button" class="mini-map-layer-btn" data-layer="satellite">Satellite</button>
             </div>
           </div>
-          <div id="mini-map" style="height:280px;border-radius:var(--radius-lg);border:1px solid var(--c-border);"></div>
+          <div id="mini-map" style="height:280px;border-radius:var(--radius-lg);border:1px solid var(--c-border);position:relative;">
+          </div>
+          <div id="location-landmark-text" class="text-small" style="margin-top:8px;font-size:0.83rem;color:var(--c-primary);font-weight:600;">
+            📍 Landmark: <span style="font-weight:normal;color:var(--c-text-muted);">Place a pin or use GPS to auto-resolve landmark</span>
+          </div>
+          <div id="location-validation-alert" style="display:none;background:var(--c-error-light, #fbe9e6);border:1px solid var(--c-error, #c94e43);color:var(--c-error, #c94e43);padding:10px 14px;border-radius:var(--radius-md);font-size:0.85rem;font-weight:600;margin-top:8px;">
+            ⚠️ Please place a pin on the map or click "Use My Current GPS" before continuing.
+          </div>
         </div>
 
         <!-- Step 3: Severity & Description -->
         <div class="wizard-step-content" id="wizard-step-3">
           <h2 class="text-heading" style="margin-bottom:4px;">Describe the issue</h2>
-          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Provide details and indicate how severe this is.</p>
+          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Provide details and indicate how
+            severe this is.</p>
 
+
+          <div class="form-group">
+            <label class="form-label">Location Type</label>
+            <div class="location-type-options" id="location-type-options"
+              style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:var(--space-md);">
+              <button type="button" class="btn-pill location-type-pill selected" data-location="general">📍
+                General</button>
+              <button type="button" class="btn-pill location-type-pill" data-location="school">🏫 School</button>
+              <button type="button" class="btn-pill location-type-pill" data-location="bus_stop">🚏 Bus Stop</button>
+              <button type="button" class="btn-pill location-type-pill" data-location="park">🌳 Park</button>
+              <button type="button" class="btn-pill location-type-pill" data-location="community_space">🏛️ Community
+                Space</button>
+              <button type="button" class="btn-pill location-type-pill" data-location="road_intersection">🚦
+                Intersection</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Infrastructure Condition</label>
+            <div class="infra-condition-options" id="infra-condition-options"
+              style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:var(--space-md);">
+              <button type="button" class="btn-pill infra-condition-pill selected" data-infra="normal">Standard</button>
+              <button type="button" class="btn-pill infra-condition-pill" data-infra="poor_lighting">💡 Poor
+                Lighting</button>
+              <button type="button" class="btn-pill infra-condition-pill" data-infra="pothole">🕳️ Severe
+                Pothole</button>
+              <button type="button" class="btn-pill infra-condition-pill" data-infra="broken_signal">🚦 Broken
+                Signal</button>
+              <button type="button" class="btn-pill infra-condition-pill" data-infra="missing_sidewalk">🚶 Missing
+                Sidewalk</button>
+              <button type="button" class="btn-pill infra-condition-pill" data-infra="blind_corner">⚠️ Blind
+                Corner</button>
+            </div>
+          </div>
           <div class="form-group">
             <label class="form-label">Severity Level</label>
             <div class="severity-options">
@@ -290,11 +452,14 @@
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xs);">
               <label class="form-label" for="report-description" style="margin-bottom:0;">Description</label>
-              <button type="button" id="btn-ai-suggest-desc" class="btn-ai-suggest" title="AI Writing Assistant — Generate or improve your description">
+              <button type="button" id="btn-ai-suggest-desc" class="btn-ai-suggest"
+                title="AI Writing Assistant — Generate or improve your description">
                 <span class="ai-sparkle">✨</span> <span id="ai-btn-text">AI Assist</span>
               </button>
             </div>
-            <textarea id="report-description" class="form-textarea" placeholder="Describe the hazard — location details, time of day, how long it's been there..." rows="4"></textarea>
+            <textarea id="report-description" class="form-textarea"
+              placeholder="Describe the hazard — location details, time of day, how long it's been there..."
+              rows="4"></textarea>
             <div class="form-hint">Be specific. Include landmarks, street names, or building references.</div>
           </div>
         </div>
@@ -302,7 +467,8 @@
         <!-- Step 4: Photo Upload -->
         <div class="wizard-step-content" id="wizard-step-4">
           <h2 class="text-heading" style="margin-bottom:4px;">Add a photo (optional)</h2>
-          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Photo evidence helps administrators assess the issue faster.</p>
+          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Photo evidence helps administrators
+            assess the issue faster.</p>
 
           <div id="photo-dropzone" class="photo-dropzone">
             <div style="font-size:2rem;margin-bottom:8px;">📷</div>
@@ -315,7 +481,8 @@
         <!-- Step 5: Review & Submit -->
         <div class="wizard-step-content" id="wizard-step-5">
           <h2 class="text-heading" style="margin-bottom:4px;">Review & Submit</h2>
-          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Review your report before submitting anonymously.</p>
+          <p class="text-muted text-small" style="margin-bottom:var(--space-lg);">Review your report before submitting
+            anonymously.</p>
           <div id="review-summary">
             <!-- Populated by JS -->
           </div>
@@ -327,6 +494,7 @@
           <button id="wizard-next" class="btn btn-primary">Next →</button>
           <button id="wizard-submit" class="btn btn-primary" style="display:none;">🚀 Submit Report</button>
         </div>
+        </div> <!-- End of #detailed-wizard-container -->
       </div>
     </div>
 
@@ -339,10 +507,22 @@
         </div>
 
         <div class="stats-grid" style="margin-bottom:var(--space-2xl);">
-          <div class="stat-card"><div class="stat-value primary" id="insight-total">0</div><div class="stat-label">Total Reports</div></div>
-          <div class="stat-card"><div class="stat-value warning" id="insight-active">0</div><div class="stat-label">Active Issues</div></div>
-          <div class="stat-card"><div class="stat-value success" id="insight-resolved">0</div><div class="stat-label">Resolved</div></div>
-          <div class="stat-card"><div class="stat-value danger" id="insight-hotspots">0</div><div class="stat-label">Hotspots</div></div>
+          <div class="stat-card">
+            <div class="stat-value primary" id="insight-total">0</div>
+            <div class="stat-label">Total Reports</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value warning" id="insight-active">0</div>
+            <div class="stat-label">Active Issues</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value success" id="insight-resolved">0</div>
+            <div class="stat-label">Resolved</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value danger" id="insight-hotspots">0</div>
+            <div class="stat-label">Hotspots</div>
+          </div>
         </div>
 
         <div class="grid-2" style="gap:var(--space-xl);">
@@ -376,9 +556,14 @@
 
         <div class="card" style="margin-bottom:var(--space-xl);">
           <div style="display:flex;gap:var(--space-sm);">
-            <input type="text" id="track-token-input" class="form-input" placeholder="Enter tracking code (e.g. SM-8F2A1C)" style="font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em;">
+            <input type="text" id="track-token-input" class="form-input"
+              placeholder="Enter tracking code (e.g. SM-8F2A1C)"
+              style="font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em;">
             <button id="track-search-btn" class="btn btn-primary">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
               Track
             </button>
           </div>
@@ -389,7 +574,8 @@
           <div class="empty-state">
             <div class="empty-state-icon">🔍</div>
             <div class="empty-state-title">Enter Your Tracking Code</div>
-            <p class="empty-state-desc">You received a tracking code (e.g. SM-XXXXXX) when you submitted your report.</p>
+            <p class="empty-state-desc">You received a tracking code (e.g. SM-XXXXXX) when you submitted your report.
+            </p>
           </div>
         </div>
       </div>
@@ -405,39 +591,36 @@
 
         <div class="card" style="margin-bottom:var(--space-lg);">
           <h3 class="text-subheading" style="margin-bottom:var(--space-sm);">🎯 Our Mission</h3>
-          <p class="text-body">SurakshaMap is a privacy-preserving platform where citizens can report public space safety issues — broken streetlights, potholes, unsafe areas, waterlogging, and more — without creating an account or sharing personal information.</p>
+          <p class="text-body">SurakshaMap is a privacy-preserving platform where citizens can report public space
+            safety issues — broken streetlights, potholes, unsafe areas, waterlogging, and more — without creating an
+            account or sharing personal information.</p>
         </div>
 
         <div class="card" style="margin-bottom:var(--space-lg);">
           <h3 class="text-subheading" style="margin-bottom:var(--space-sm);">🛡️ Privacy First</h3>
-          <p class="text-body">We collect zero personally identifiable information. No names, no emails, no phone numbers. Reports are completely anonymous. Photo metadata (EXIF) is stripped before upload.</p>
-          <a href="privacy.html" class="btn btn-ghost btn-sm" style="margin-top:var(--space-sm);">Read Privacy Policy →</a>
+          <p class="text-body">We collect zero personally identifiable information. No names, no emails, no phone
+            numbers. Reports are completely anonymous. Photo metadata (EXIF) is stripped before upload.</p>
+          <a href="privacy.html" class="btn btn-ghost btn-sm" style="margin-top:var(--space-sm);">Read Privacy Policy
+            →</a>
         </div>
 
         <div class="card" style="margin-bottom:var(--space-lg);">
           <h3 class="text-subheading" style="margin-bottom:var(--space-sm);">🤖 AI-Powered Review</h3>
-          <p class="text-body">Reports are automatically reviewed by Google's Gemini AI to filter spam and detect duplicates before reaching city administrators, ensuring faster response to genuine issues.</p>
-        </div>
-
-        <div class="card" style="margin-bottom:var(--space-lg);">
-          <h3 class="text-subheading" style="margin-bottom:var(--space-sm);">⚙️ Technology</h3>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--space-sm);">
-            <span class="badge badge-ai">Firebase</span>
-            <span class="badge badge-pending">Leaflet Maps</span>
-            <span class="badge badge-progress">Chart.js</span>
-            <span class="badge badge-resolved">Gemini AI</span>
-            <span class="badge badge-moderate">Vanilla JS</span>
-            <span class="badge badge-duplicate">CSS Custom Properties</span>
-          </div>
+          <p class="text-body">Reports are automatically reviewed by Google's Gemini AI to filter spam and detect
+            duplicates before reaching city administrators, ensuring faster response to genuine issues.</p>
         </div>
 
         <div class="card">
           <h3 class="text-subheading" style="margin-bottom:var(--space-sm);">📊 Quality Expectations</h3>
           <ul style="list-style:none;padding:0;">
-            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ Privacy-preserving anonymous reporting</li>
-            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ Evidence-based safety analysis with explainable risk scoring</li>
-            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ No individual profiling or automated accusations</li>
-            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ Actionable intervention recommendations</li>
+            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ Privacy-preserving
+              anonymous reporting</li>
+            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ Evidence-based
+              safety analysis with explainable risk scoring</li>
+            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ No individual
+              profiling or automated accusations</li>
+            <li style="padding:8px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;">✅ Actionable
+              intervention recommendations</li>
             <li style="padding:8px 0;display:flex;gap:8px;">✅ Clear limitations and impact measurement</li>
           </ul>
         </div>
@@ -448,31 +631,45 @@
 
   <!-- ═══════ Floating Action Button ═══════ -->
   <a id="fab-report" href="#/report" class="fab-report" aria-label="Report an issue">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
   </a>
 
   <!-- ═══════ Mobile Bottom Navigation ═══════ -->
   <nav class="bottom-nav">
     <a href="#/" class="nav-item active" data-route="home">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+      </svg>
       <span>Home</span>
     </a>
     <a href="#/map" class="nav-item" data-route="map">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+      </svg>
       <span>Map</span>
     </a>
     <a href="#/report" class="nav-item" data-route="report" style="position:relative;top:-8px;">
-      <div style="width:48px;height:48px;border-radius:50%;background:var(--g-primary);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-primary-glow);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="24" height="24"><path d="M12 5v14M5 12h14"/></svg>
+      <div
+        style="width:48px;height:48px;border-radius:50%;background:var(--g-primary);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-primary-glow);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="24" height="24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
       </div>
       <span>Report</span>
     </a>
     <a href="#/insights" class="nav-item" data-route="insights">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 20V10M12 20V4M6 20v-6" />
+      </svg>
       <span>Insights</span>
     </a>
     <a href="#/track" class="nav-item" data-route="track">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
       <span>Track</span>
     </a>
   </nav>
@@ -511,7 +708,7 @@
 
   <!-- Home page initialization -->
   <script>
-    (function() {
+    (function () {
       'use strict';
       window.SurakshaHome = {
         async init() {
@@ -521,7 +718,7 @@
           // Animate stat counters
           SurakshaUI.animateCounter(document.getElementById('home-total'), reports.length);
           SurakshaUI.animateCounter(document.getElementById('home-active'),
-            reports.filter(r => !['resolved','rejected','ai_rejected'].includes(r.status)).length);
+            reports.filter(r => !['resolved', 'rejected', 'ai_rejected'].includes(r.status)).length);
           SurakshaUI.animateCounter(document.getElementById('home-resolved'),
             reports.filter(r => r.status === 'resolved').length);
           SurakshaUI.animateCounter(document.getElementById('home-hotspots'), hotspots.length);
@@ -580,4 +777,5 @@
 
   <script src="js/app.js?v=2.8.1"></script>
 </body>
+
 </html>

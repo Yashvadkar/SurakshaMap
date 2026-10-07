@@ -7,36 +7,189 @@
   'use strict';
 
   const CATEGORY_ICONS = {
+    'accident': '💥',
+    'road accident': '💥',
+    'road_accident': '💥',
     'broken streetlight': '💡',
+    'broken_streetlight': '💡',
+    'broken_lighting': '💡',
+    'lighting': '💡',
     'open manhole': '🕳️',
+    'open_manhole': '🕳️',
+    'manhole': '🕳️',
     'waterlogging': '🌊',
+    'waterlogged': '🌊',
     'unsafe crossing': '🚸',
+    'unsafe_crossing': '🚸',
+    'crossing': '🚸',
     'broken footpath': '🧱',
+    'broken_footpath': '🧱',
+    'footpath': '🧱',
+    'infrastructure': '🧱',
     'obstruction': '🚧',
+    'road_obstruction': '🚧',
     'harassment spot': '🚨',
-    'other': '⚠️'
+    'harassment_spot': '🚨',
+    'harassment': '🚨',
+    'unsafe area': '🚨',
+    'unsafe_area': '🚨',
+    'pothole': '🕳️',
+    'potholes': '🕳️',
+    'other': '⚠️',
+    'other hazard': '⚠️',
+    'other_hazard': '⚠️'
   };
 
   const CATEGORY_LABELS = {
+    'accident': 'Road Accident',
+    'road accident': 'Road Accident',
+    'road_accident': 'Road Accident',
     'broken streetlight': 'Broken Streetlight',
+    'broken_streetlight': 'Broken Streetlight',
+    'broken_lighting': 'Broken Streetlight',
+    'lighting': 'Street Lighting Hazard',
     'open manhole': 'Open Manhole',
-    'waterlogging': 'Waterlogging',
+    'open_manhole': 'Open Manhole',
+    'manhole': 'Open Manhole',
+    'waterlogging': 'Severe Waterlogging',
+    'waterlogged': 'Severe Waterlogging',
     'unsafe crossing': 'Unsafe Crossing',
+    'unsafe_crossing': 'Unsafe Crossing',
+    'crossing': 'Pedestrian Crossing Hazard',
     'broken footpath': 'Broken Footpath',
-    'obstruction': 'Obstruction',
-    'harassment spot': 'Unsafe Area',
-    'other': 'Other Hazard'
+    'broken_footpath': 'Broken Footpath',
+    'footpath': 'Damaged Footpath',
+    'infrastructure': 'Civic Infrastructure Hazard',
+    'obstruction': 'Road Obstruction',
+    'road_obstruction': 'Road Obstruction',
+    'harassment spot': 'Unsafe / Harassment Area',
+    'harassment_spot': 'Unsafe / Harassment Area',
+    'harassment': 'Unsafe Area',
+    'unsafe area': 'Unsafe Public Area',
+    'unsafe_area': 'Unsafe Public Area',
+    'pothole': 'Severe Pothole',
+    'potholes': 'Severe Potholes',
+    'other': 'Other Hazard',
+    'other hazard': 'Other Hazard',
+    'other_hazard': 'Other Hazard'
   };
+
+  // ─── Municipal Civic Departments Matrix & SLAs ───
+  const CIVIC_DEPARTMENTS = {
+    'ELECTRICAL': {
+      code: 'ELECTRICAL',
+      name: 'Electrical & Street Lighting',
+      icon: '💡',
+      defaultSlaHours: 24,
+      deskEmail: 'lighting.desk@mcgm.gov.in'
+    },
+    'SWD': {
+      code: 'SWD',
+      name: 'Storm Water Drainage & Sewage',
+      icon: '🌊',
+      defaultSlaHours: 12,
+      deskEmail: 'swd.control@mcgm.gov.in'
+    },
+    'ROADS_BRIDGES': {
+      code: 'ROADS_BRIDGES',
+      name: 'Roads, Pavements & Infrastructure',
+      icon: '🧱',
+      defaultSlaHours: 48,
+      deskEmail: 'roads.dispatch@mcgm.gov.in'
+    },
+    'TRAFFIC_POLICE': {
+      code: 'TRAFFIC_POLICE',
+      name: 'Traffic Planning & Police Control',
+      icon: '🚦',
+      defaultSlaHours: 6,
+      deskEmail: 'traffic.ops@mahapolice.gov.in'
+    },
+    'DISASTER_MGMT': {
+      code: 'DISASTER_MGMT',
+      name: 'Emergency & Community Safety Patrol',
+      icon: '🚨',
+      defaultSlaHours: 8,
+      deskEmail: 'safety.ward@mcgm.gov.in'
+    }
+  };
+
+  const CATEGORY_DEPARTMENT_ROUTING = {
+    'broken streetlight': { dept: 'ELECTRICAL', slaHours: 24, defaultSeverity: 'high' },
+    'broken_streetlight': { dept: 'ELECTRICAL', slaHours: 24, defaultSeverity: 'high' },
+    'broken_lighting': { dept: 'ELECTRICAL', slaHours: 24, defaultSeverity: 'high' },
+    'lighting': { dept: 'ELECTRICAL', slaHours: 24, defaultSeverity: 'high' },
+    'open manhole': { dept: 'SWD', slaHours: 6, defaultSeverity: 'critical' },
+    'open_manhole': { dept: 'SWD', slaHours: 6, defaultSeverity: 'critical' },
+    'manhole': { dept: 'SWD', slaHours: 6, defaultSeverity: 'critical' },
+    'waterlogging': { dept: 'SWD', slaHours: 12, defaultSeverity: 'high' },
+    'waterlogged': { dept: 'SWD', slaHours: 12, defaultSeverity: 'high' },
+    'road accident': { dept: 'TRAFFIC_POLICE', slaHours: 2, defaultSeverity: 'critical' },
+    'road_accident': { dept: 'TRAFFIC_POLICE', slaHours: 2, defaultSeverity: 'critical' },
+    'accident': { dept: 'TRAFFIC_POLICE', slaHours: 2, defaultSeverity: 'critical' },
+    'unsafe crossing': { dept: 'TRAFFIC_POLICE', slaHours: 12, defaultSeverity: 'high' },
+    'unsafe_crossing': { dept: 'TRAFFIC_POLICE', slaHours: 12, defaultSeverity: 'high' },
+    'broken footpath': { dept: 'ROADS_BRIDGES', slaHours: 48, defaultSeverity: 'medium' },
+    'broken_footpath': { dept: 'ROADS_BRIDGES', slaHours: 48, defaultSeverity: 'medium' },
+    'footpath': { dept: 'ROADS_BRIDGES', slaHours: 48, defaultSeverity: 'medium' },
+    'infrastructure': { dept: 'ROADS_BRIDGES', slaHours: 48, defaultSeverity: 'medium' },
+    'obstruction': { dept: 'ROADS_BRIDGES', slaHours: 24, defaultSeverity: 'high' },
+    'pothole': { dept: 'ROADS_BRIDGES', slaHours: 36, defaultSeverity: 'high' },
+    'unsafe area': { dept: 'DISASTER_MGMT', slaHours: 8, defaultSeverity: 'high' },
+    'unsafe_area': { dept: 'DISASTER_MGMT', slaHours: 8, defaultSeverity: 'high' },
+    'harassment spot': { dept: 'DISASTER_MGMT', slaHours: 8, defaultSeverity: 'critical' },
+    'harassment': { dept: 'DISASTER_MGMT', slaHours: 8, defaultSeverity: 'critical' },
+    'other': { dept: 'ROADS_BRIDGES', slaHours: 48, defaultSeverity: 'medium' }
+  };
+
+  const MUNICIPAL_WARDS = [
+    { id: 'BMC_KW', name: 'Ward K-West (Andheri West)', city: 'Mumbai', bounds: { minLat: 19.11, maxLat: 19.16, minLng: 72.81, maxLng: 72.86 } },
+    { id: 'BMC_KE', name: 'Ward K-East (Andheri East)', city: 'Mumbai', bounds: { minLat: 19.10, maxLat: 19.15, minLng: 72.85, maxLng: 72.90 } },
+    { id: 'BMC_FN', name: 'Ward F-North (Matunga / Sion)', city: 'Mumbai', bounds: { minLat: 19.01, maxLat: 19.06, minLng: 72.84, maxLng: 72.88 } },
+    { id: 'NMMC_BELAPUR', name: 'Ward Belapur (Sector 1-20)', city: 'Navi Mumbai', bounds: { minLat: 19.00, maxLat: 19.04, minLng: 73.02, maxLng: 73.06 } },
+    { id: 'NMMC_VASHI', name: 'Ward Vashi (Sectors 1-30)', city: 'Navi Mumbai', bounds: { minLat: 19.06, maxLat: 19.09, minLng: 72.99, maxLng: 73.02 } },
+    { id: 'DELHI_CENTRAL', name: 'Central Zone (Connaught Place / ITO)', city: 'Delhi', bounds: { minLat: 28.61, maxLat: 28.66, minLng: 77.20, maxLng: 77.26 } }
+  ];
+
+  const PIPELINE_STAGES = [
+    { key: 'SUBMITTED', label: 'Report Submitted', icon: '📝', step: 1 },
+    { key: 'AI_VERIFIED', label: 'AI Triage & Scored', icon: '🤖', step: 2 },
+    { key: 'WARD_ASSIGNED', label: 'Escalated to Ward Desk', icon: '🏛️', step: 3 },
+    { key: 'IN_PROGRESS', label: 'Field Work Order Dispatched', icon: '🔧', step: 4 },
+    { key: 'RESOLVED', label: 'Resolved with Evidence', icon: '✅', step: 5 }
+  ];
 
   const STATUS_MAP = {
     'pending_ai': { cls: 'badge-ai', text: 'AI Review', icon: '🤖' },
     'ai_rejected': { cls: 'badge-rejected', text: 'AI Rejected', icon: '🚫' },
     'flagged_duplicate': { cls: 'badge-duplicate', text: 'Duplicate', icon: '📋' },
     'pending_review': { cls: 'badge-pending', text: 'Pending Review', icon: '⏳' },
+    'ward_assigned': { cls: 'badge-progress', text: 'Ward Assigned', icon: '🏛️' },
     'verified': { cls: 'badge-resolved', text: 'Verified', icon: '✅' },
     'in_progress': { cls: 'badge-progress', text: 'In Progress', icon: '🔧' },
     'resolved': { cls: 'badge-resolved', text: 'Resolved', icon: '✅' },
     'rejected': { cls: 'badge-rejected', text: 'Rejected', icon: '❌' }
+  };
+
+  
+  const LOCATION_TYPE_LABELS = {
+    'school': '🏫 School Zone',
+    'bus_stop': '🚏 Bus Stop',
+    'transit_hub': '🚆 Transit Hub',
+    'park': '🌳 Community Park',
+    'community_space': '🏛️ Community Space',
+    'road_intersection': '🚦 Intersection',
+    'general': '📍 General Public'
+  };
+
+  const INFRASTRUCTURE_LABELS = {
+    'poor_lighting': '💡 Poor Lighting',
+    'pothole': '🕳️ Severe Pothole',
+    'broken_signal': '🚦 Broken Signal',
+    'missing_sidewalk': '🚶 Missing Sidewalk',
+    'waterlogged': '🌊 Waterlogged',
+    'blind_corner': '⚠️ Blind Corner',
+    'faded_zebra_crossing': '🚸 Faded Crossing',
+    'normal': 'Standard'
   };
 
   const SEVERITY_MAP = {
@@ -160,11 +313,69 @@
   }
 
   function getCategoryIcon(category) {
-    return CATEGORY_ICONS[(category || '').toLowerCase()] || '⚠️';
+    if (!category) return '⚠️';
+    const key = String(category).trim().toLowerCase();
+    return CATEGORY_ICONS[key] || '⚠️';
+  }
+
+  function getLocationTypeLabel(t) {
+    return LOCATION_TYPE_LABELS[(t || '').toLowerCase()] || t || 'General';
+  }
+
+  function getInfrastructureLabel(i) {
+    return INFRASTRUCTURE_LABELS[(i || '').toLowerCase()] || i || 'Normal';
   }
 
   function getCategoryLabel(category) {
-    return CATEGORY_LABELS[(category || '').toLowerCase()] || category || 'Other';
+    if (!category) return 'Other Hazard';
+    const key = String(category).trim().toLowerCase();
+    if (CATEGORY_LABELS[key]) return CATEGORY_LABELS[key];
+    // Normalize snake_case or kebab-case to Title Case
+    return key
+      .replace(/[_-]/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function getDepartmentForCategory(category) {
+    const key = (category || '').trim().toLowerCase();
+    const route = CATEGORY_DEPARTMENT_ROUTING[key] || { dept: 'ROADS_BRIDGES', slaHours: 48, defaultSeverity: 'medium' };
+    const deptInfo = CIVIC_DEPARTMENTS[route.dept] || CIVIC_DEPARTMENTS['ROADS_BRIDGES'];
+    return {
+      code: deptInfo.code,
+      name: deptInfo.name,
+      icon: deptInfo.icon,
+      slaHours: route.slaHours,
+      defaultSeverity: route.defaultSeverity,
+      deskEmail: deptInfo.deskEmail
+    };
+  }
+
+  function getWardForCoordinates(lat, lng) {
+    const nLat = Number(lat);
+    const nLng = Number(lng);
+    if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) {
+      return { id: 'BMC_KW', name: 'Ward K-West (Andheri West)', city: 'Mumbai' };
+    }
+    for (const w of MUNICIPAL_WARDS) {
+      if (nLat >= w.bounds.minLat && nLat <= w.bounds.maxLat && nLng >= w.bounds.minLng && nLng <= w.bounds.maxLng) {
+        return { id: w.id, name: w.name, city: w.city };
+      }
+    }
+    return { id: 'BMC_CENTRAL', name: 'Central City Ward (Civic HQ)', city: 'Municipal Jurisdiction' };
+  }
+
+  function getSlaCountdown(submittedAt, slaHours = 24) {
+    if (!submittedAt) return { hoursRemaining: slaHours, isBreached: false, label: `${slaHours}h SLA` };
+    const subDate = new Date(submittedAt);
+    if (isNaN(subDate.getTime())) return { hoursRemaining: slaHours, isBreached: false, label: `${slaHours}h SLA` };
+    const deadline = new Date(subDate.getTime() + slaHours * 3600000);
+    const now = new Date();
+    const diffMs = deadline - now;
+    const diffHours = Math.round(diffMs / 3600000);
+    if (diffMs <= 0) {
+      return { hoursRemaining: 0, isBreached: true, label: `🚨 SLA Breached (${Math.abs(diffHours)}h overdue)` };
+    }
+    return { hoursRemaining: diffHours, isBreached: false, label: `⏳ ${diffHours}h left to SLA deadline` };
   }
 
   // ─── Ripple Effect ───
@@ -282,6 +493,8 @@
     createSeverityBadge,
     getCategoryIcon,
     getCategoryLabel,
+    getLocationTypeLabel,
+    getInfrastructureLabel,
     createRipple,
     animateCounter,
     initRevealObserver,
@@ -294,6 +507,13 @@
     CATEGORY_ICONS,
     CATEGORY_LABELS,
     STATUS_MAP,
-    SEVERITY_MAP
+    SEVERITY_MAP,
+    CIVIC_DEPARTMENTS,
+    CATEGORY_DEPARTMENT_ROUTING,
+    MUNICIPAL_WARDS,
+    PIPELINE_STAGES,
+    getDepartmentForCategory,
+    getWardForCoordinates,
+    getSlaCountdown
   };
 })();

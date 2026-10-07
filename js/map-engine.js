@@ -133,8 +133,109 @@
     setupLayerSwitcher();
     setupBottomSheet();
     setupThemeListener();
+    setupLocateMe();
+    setupPopupCorroboration();
 
     window.SurakshaMapInstance = map;
+  }
+
+  let userLocationMarker = null;
+
+  function setupLocateMe() {
+    const btn = document.getElementById('btn-map-locate-me');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        SurakshaUI.showToast('Geolocation is not supported by your browser', 'warning');
+        return;
+      }
+
+      const originalContent = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span>';
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          btn.disabled = false;
+          btn.innerHTML = originalContent;
+          const { latitude, longitude, accuracy } = pos.coords;
+          if (!map) return;
+
+          map.flyTo([latitude, longitude], 16, { animate: true, duration: 1.2 });
+
+          if (userLocationMarker) {
+            map.removeLayer(userLocationMarker);
+          }
+
+          userLocationMarker = L.circleMarker([latitude, longitude], {
+            radius: 8,
+            fillColor: '#2563EB',
+            color: '#FFFFFF',
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.95
+          }).addTo(map);
+
+          userLocationMarker.bindTooltip('📍 Your Current Location', { permanent: false, direction: 'top' });
+          SurakshaUI.showToast(`Centered on location (±${Math.round(accuracy)}m)`, 'info');
+        },
+        (err) => {
+          btn.disabled = false;
+          btn.innerHTML = originalContent;
+          console.warn('Geolocation error:', err);
+          SurakshaUI.showToast('Unable to get GPS coordinates. Check permissions.', 'warning');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
+  }
+
+  function isNightSafetyHazard(r) {
+    const cat = (r.category || '').toLowerCase();
+    const desc = (r.description || '').toLowerCase();
+    const isNightCat = ['broken_lighting', 'harassment', 'infrastructure', 'dark_spot'].includes(cat);
+    const isHighSeverity = ['critical', 'high'].includes((r.severity || '').toLowerCase());
+    const mentionsNightOrLight = desc.includes('dark') || desc.includes('light') || desc.includes('lamp') || desc.includes('night') || desc.includes('unlit');
+    return isNightCat || isHighSeverity || mentionsNightOrLight;
+  }
+
+  function setupPopupCorroboration() {
+    if (!map) return;
+    map.on('popupopen', (e) => {
+      const popupEl = e.popup?.getElement?.();
+      if (!popupEl) return;
+
+      popupEl.querySelectorAll('.map-corroborate-btn').forEach(btn => {
+        btn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          const reportId = btn.dataset.id;
+          const action = btn.dataset.action;
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;"></span>';
+
+          try {
+            await window.SurakshaDB.updateReport(reportId, {
+              citizenUpdate: action,
+              citizenUpdateAt: new Date().toISOString()
+            });
+
+            if (action === 'resolved') {
+              SurakshaUI.showToast('✅ Marked as resolved. Pending review.', 'success');
+              btn.innerHTML = '✅ Fixed';
+            } else {
+              SurakshaUI.showToast('👍 Hazard corroborated! Thank you.', 'success');
+              btn.innerHTML = '👍 Noted';
+            }
+          } catch (err) {
+            console.error('Corroboration failed:', err);
+            SurakshaUI.showToast('Failed to submit update', 'error');
+            btn.disabled = false;
+            btn.innerHTML = action === 'resolved' ? '✅ Fixed' : '👍 Still There';
+          }
+        });
+      });
+    });
   }
 
   function setMapType(type) {
@@ -195,7 +296,7 @@
     const emoji = SurakshaUI.getCategoryIcon(category);
     return L.divIcon({
       className: 'custom-map-pin',
-      html: `<div style="width:34px;height:34px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;">${emoji}</div>`,
+      html: `<div class="map-pin-inner" style="width:34px;height:34px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;">${emoji}</div>`,
       iconSize: [34, 34],
       iconAnchor: [17, 17]
     });
@@ -210,6 +311,8 @@
     const publicReports = reports.filter(r => ['verified', 'in_progress', 'resolved'].includes(r.status));
     const filtered = currentFilter === 'all'
       ? publicReports
+      : currentFilter === 'night'
+      ? publicReports.filter(isNightSafetyHazard)
       : publicReports.filter(r => (r.category || '').toLowerCase() === currentFilter.toLowerCase());
 
     // Render hotspot circles
@@ -230,18 +333,26 @@
       const marker = L.marker([r.latitude, r.longitude], { icon: createMarkerIcon(r.category, r.severity) });
 
       marker.bindPopup(`
-        <div style="font-family:var(--font-body);min-width:210px;">
+        <div style="font-family:var(--font-body);min-width:220px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <strong>${SurakshaUI.getCategoryLabel(r.category)}</strong>
             ${SurakshaUI.createSeverityBadge(r.severity)}
           </div>
           <p style="font-size:0.85rem;color:var(--c-text-muted);margin-bottom:8px;line-height:1.4;">${SurakshaUI.escapeHtml((r.description || '').substring(0, 120))}${(r.description || '').length > 120 ? '...' : ''}</p>
           ${r.photoUrl ? `<img src="${r.photoUrl}" style="width:100%;border-radius:8px;margin-bottom:8px;max-height:120px;object-fit:cover;" alt="Evidence">` : ''}
-          <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             ${SurakshaUI.createStatusBadge(r.status)}
             <span style="font-size:0.75rem;color:var(--c-text-light);">${SurakshaUI.formatDate(r.submittedAt)}</span>
           </div>
-          <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--c-text-light);margin-top:6px;">Token: ${r.trackingToken}</div>
+          <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--c-text-light);">Token: ${r.trackingToken}</div>
+          <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--c-border);">
+            <button class="btn btn-secondary btn-sm map-corroborate-btn" data-id="${r.id}" data-action="issue_still_there" style="font-size:0.75rem;padding:4px 8px;flex:1;">
+              👍 Still There
+            </button>
+            <button class="btn btn-ghost btn-sm map-corroborate-btn" data-id="${r.id}" data-action="resolved" style="font-size:0.75rem;padding:4px 8px;">
+              ✅ Fixed
+            </button>
+          </div>
         </div>
       `, { maxWidth: 320 });
 
@@ -294,6 +405,8 @@
     const publicReports = reports.filter(r => ['verified', 'in_progress', 'resolved'].includes(r.status));
     const filtered = currentFilter === 'all'
       ? publicReports
+      : currentFilter === 'night'
+      ? publicReports.filter(isNightSafetyHazard)
       : publicReports.filter(r => (r.category || '').toLowerCase() === currentFilter.toLowerCase());
 
     const recent = filtered.slice(0, 20);
@@ -327,5 +440,5 @@
     }, 250);
   });
 
-  window.SurakshaMap = { init, setMapType, getMap: () => map };
+  window.SurakshaMap = { init, setMapType, getMap: () => map, invalidateSize: () => { if (map) map.invalidateSize(); } };
 })();

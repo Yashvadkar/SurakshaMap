@@ -7,6 +7,8 @@
 
   let currentStep = 1;
   let selectedCategory = '';
+  let selectedLocationType = 'general';
+  let selectedInfraCondition = 'normal';
   let selectedSeverity = 'medium';
   let selectedLocation = { lat: null, lng: null };
   let selectedPhotoFile = null;
@@ -17,6 +19,8 @@
 
   // Contextual fallback templates by category
   const categoryTemplates = {
+    'accident': 'Severe vehicular or pedestrian traffic collision resulting in structural hazard, injury risk, and critical intersection gridlock.',
+    'road accident': 'Severe vehicular or pedestrian traffic collision resulting in structural hazard, injury risk, and critical intersection gridlock.',
     'pothole': 'Severe surface depression and fractured asphalt along the traffic path, creating serious collision and vehicular damage risks for two-wheelers and automobiles.',
     'manhole': 'Deep uncovered drainage pit located directly on the pedestrian pathway, posing an immediate tripping and falling hazard, especially under low evening lighting.',
     'open manhole': 'Deep uncovered drainage pit located directly on the pedestrian pathway, posing an immediate tripping and falling hazard, especially under low evening lighting.',
@@ -45,12 +49,251 @@
     showStep(1);
     if (!isDomBound) {
       isDomBound = true;
+      setupModeSwitcher();
+      setupQuickReport();
       setupCategorySelection();
       setupLocationStep();
       setupSeveritySelection();
+      setupLocationTypeAndInfra();
       setupPhotoUpload();
       setupAiDescriptionSuggestion();
       setupNavButtons();
+    }
+  }
+
+  function clearLocationValidationAlert() {
+    const alertEl = document.getElementById('location-validation-alert');
+    const mapBox = document.getElementById('mini-map');
+    if (alertEl) alertEl.style.display = 'none';
+    if (mapBox) mapBox.classList.remove('map-border-error');
+  }
+
+  let geocodeDebounceTimer = null;
+  async function reverseGeocodeLocation(lat, lng) {
+    const landmarkEl = document.getElementById('location-landmark-text');
+    if (!landmarkEl) return;
+    landmarkEl.innerHTML = '📍 Landmark: <span style="color:var(--c-text-muted);">Resolving street name...</span>';
+    clearTimeout(geocodeDebounceTimer);
+    geocodeDebounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const addr = data.address || {};
+          const road = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || '';
+          const locality = addr.city_district || addr.suburb || addr.city || addr.state_district || '';
+          const landmark = [road, locality].filter(Boolean).join(', ') || data.display_name?.split(',')?.slice(0, 2)?.join(', ');
+          if (landmark) {
+            landmarkEl.innerHTML = `📍 Landmark: <strong>${SurakshaUI.escapeHtml(landmark)}</strong>`;
+            selectedLocation.address = landmark;
+            return;
+          }
+        }
+      } catch (e) {
+        console.info('[Geocoding] Using municipal ward fallback');
+      }
+      const ward = SurakshaUI.getWardForCoordinates(lat, lng);
+      landmarkEl.innerHTML = `📍 Civic Zone: <strong>${ward.name} (${ward.city})</strong>`;
+      selectedLocation.address = ward.name;
+    }, 350);
+  }
+
+  // ─── Quick Report Controller (10-Second High Urgency) ───
+  let quickSelectedCategory = 'accident';
+  let quickLocation = { lat: 19.076, lng: 72.8777, address: 'Central Ward' };
+  let quickPhotoFile = null;
+  let quickPhotoPreview = null;
+
+  function setupModeSwitcher() {
+    const btnQuick = document.getElementById('btn-mode-quick');
+    const btnDetailed = document.getElementById('btn-mode-detailed');
+    const quickContainer = document.getElementById('quick-report-container');
+    const detailedContainer = document.getElementById('detailed-wizard-container');
+
+    if (!btnQuick || !btnDetailed || !quickContainer || !detailedContainer) return;
+
+    btnQuick.addEventListener('click', () => {
+      btnQuick.classList.add('active');
+      btnDetailed.classList.remove('active');
+      quickContainer.style.display = 'block';
+      detailedContainer.style.display = 'none';
+      acquireQuickGps();
+    });
+
+    btnDetailed.addEventListener('click', () => {
+      btnDetailed.classList.add('active');
+      btnQuick.classList.remove('active');
+      detailedContainer.style.display = 'block';
+      quickContainer.style.display = 'none';
+    });
+  }
+
+  function acquireQuickGps() {
+    const statusEl = document.getElementById('quick-gps-status');
+    const landmarkEl = document.getElementById('quick-gps-landmark');
+    if (statusEl) statusEl.textContent = '📡 Acquiring GPS coordinates...';
+    if (landmarkEl) landmarkEl.textContent = 'Contacting location sensor...';
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          quickLocation.lat = pos.coords.latitude;
+          quickLocation.lng = pos.coords.longitude;
+          if (statusEl) statusEl.innerHTML = `✅ GPS Fixed: <strong>${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}</strong>`;
+          const ward = SurakshaUI.getWardForCoordinates(pos.coords.latitude, pos.coords.longitude);
+          if (landmarkEl) landmarkEl.innerHTML = `📍 Ward: <strong>${ward.name} (${ward.city})</strong>`;
+          quickLocation.address = ward.name;
+        },
+        (err) => {
+          if (statusEl) statusEl.innerHTML = `📍 Using Civic Zone Coordinates: <strong>19.0760, 72.8777</strong>`;
+          if (landmarkEl) landmarkEl.textContent = 'Municipal Ward Belapur / Andheri (Fallback)';
+        },
+        { timeout: 8000 }
+      );
+    }
+  }
+
+  function setupQuickReport() {
+    const refreshBtn = document.getElementById('btn-quick-gps-refresh');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => acquireQuickGps());
+    }
+
+    // Category pills
+    const grid = document.getElementById('quick-category-grid');
+    if (grid) {
+      grid.addEventListener('click', (e) => {
+        const pill = e.target.closest('.quick-cat-pill');
+        if (!pill) return;
+        grid.querySelectorAll('.quick-cat-pill').forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+        quickSelectedCategory = pill.dataset.category;
+      });
+      const first = grid.querySelector('.quick-cat-pill');
+      if (first) first.classList.add('selected');
+    }
+
+    // Photo input
+    const dropzone = document.getElementById('quick-photo-dropzone');
+    const input = document.getElementById('quick-photo-input');
+    const previewWrap = document.getElementById('quick-photo-preview-wrap');
+    const previewImg = document.getElementById('quick-photo-preview');
+
+    if (dropzone && input) {
+      dropzone.addEventListener('click', () => input.click());
+      input.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          quickPhotoFile = file;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            quickPhotoPreview = ev.target.result;
+            if (previewImg && previewWrap) {
+              previewImg.src = ev.target.result;
+              previewWrap.style.display = 'block';
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // Quick submit button
+    const submitBtn = document.getElementById('btn-submit-quick-report');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', async () => {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> ⚡ Dispatching in &lt;10s...';
+
+        try {
+          const descInput = document.getElementById('quick-desc-input');
+          const desc = (descInput?.value || '').trim() ||
+            `Urgent ${SurakshaUI.getCategoryLabel(quickSelectedCategory)} reported near ${quickLocation.address || 'public street'}. Requires swift municipal attention.`;
+
+          const token = SurakshaUI.generateToken();
+          const id = SurakshaUI.generateId();
+          const ward = SurakshaUI.getWardForCoordinates(quickLocation.lat, quickLocation.lng);
+          const dept = SurakshaUI.getDepartmentForCategory(quickSelectedCategory);
+
+          let photoUrl = null;
+          if (quickPhotoPreview) {
+            photoUrl = quickPhotoPreview;
+          }
+
+          const reportData = {
+            id,
+            trackingToken: token,
+            category: quickSelectedCategory,
+            description: desc,
+            latitude: quickLocation.lat || 19.076,
+            longitude: quickLocation.lng || 72.8777,
+            severity: 'high',
+            locationType: 'general',
+            infrastructureCondition: 'normal',
+            submittedAt: new Date().toISOString(),
+            status: 'ward_assigned',
+            ward_id: ward.id,
+            department_code: dept.code,
+            sla_due_at: new Date(Date.now() + dept.slaHours * 3600000).toISOString(),
+            photoUrl,
+            confirmations: 1
+          };
+
+          await window.SurakshaDB.addReport(reportData);
+          SurakshaUI.saveToken(token);
+
+          // Success modal
+          SurakshaUI.showModal({
+            title: '⚡ Quick Report Dispatched!',
+            body: `
+              <div style="text-align:center;padding:12px 0;">
+                <div style="font-size:3rem;margin-bottom:8px;">✅</div>
+                <h3 class="text-subheading" style="margin-bottom:6px;">Dispatched to ${SurakshaUI.escapeHtml(dept.name)}</h3>
+                <p class="text-small text-muted" style="margin-bottom:16px;">
+                  Assigned to <strong>${SurakshaUI.escapeHtml(ward.name)}</strong> • SLA: <strong>${dept.slaHours} Hours</strong>
+                </p>
+                <div style="background:var(--c-surface-elevated);padding:12px;border-radius:var(--radius-lg);border:1px solid var(--c-border);margin-bottom:16px;">
+                  <div style="font-size:0.75rem;color:var(--c-text-muted);margin-bottom:4px;">ANONYMOUS TRACKING CODE</div>
+                  <div style="font-size:1.4rem;font-weight:800;letter-spacing:0.05em;color:var(--c-primary);font-family:var(--font-mono);">${token}</div>
+                </div>
+                <p class="text-small text-muted">Receipt stored securely on this device. You can track municipal status anytime without an account.</p>
+              </div>
+            `,
+            actions: [
+              {
+                id: 'track-report',
+                label: '🔍 Track Report Now',
+                cls: 'btn-primary',
+                onClick: () => {
+                  window.location.hash = `#/track?token=${token}`;
+                }
+              },
+              {
+                id: 'view-map',
+                label: '🗺️ View on Map',
+                cls: 'btn-secondary',
+                onClick: () => {
+                  window.location.hash = '#/map';
+                }
+              }
+            ]
+          });
+
+          // Reset inputs
+          if (descInput) descInput.value = '';
+          if (previewWrap) previewWrap.style.display = 'none';
+          quickPhotoFile = null;
+          quickPhotoPreview = null;
+        } catch (err) {
+          console.error('Quick report failed:', err);
+          SurakshaUI.showToast('Failed to dispatch report. Please check network.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '🚀 Dispatch Quick Report (10s)';
+        }
+      });
     }
   }
 
@@ -102,6 +345,8 @@
           (pos) => {
             selectedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             if (status) status.innerHTML = `✅ Location acquired: <strong>${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}</strong>`;
+            clearLocationValidationAlert();
+            reverseGeocodeLocation(pos.coords.latitude, pos.coords.longitude);
             gpsBtn.disabled = false;
             if (miniMap && miniMapMarker) {
               miniMapMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
@@ -112,6 +357,8 @@
               miniMapMarker.on('dragend', (e) => {
                 const latlng = e.target.getLatLng();
                 selectedLocation = { lat: latlng.lat, lng: latlng.lng };
+                clearLocationValidationAlert();
+                reverseGeocodeLocation(latlng.lat, latlng.lng);
                 if (status) status.innerHTML = `📍 Pin placed: <strong>${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</strong>`;
               });
             }
@@ -202,6 +449,8 @@
 
     miniMap.on('click', (e) => {
       selectedLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+      clearLocationValidationAlert();
+      reverseGeocodeLocation(e.latlng.lat, e.latlng.lng);
       if (miniMapMarker) {
         miniMapMarker.setLatLng(e.latlng);
       } else {
@@ -209,12 +458,33 @@
         miniMapMarker.on('dragend', (ev) => {
           const latlng = ev.target.getLatLng();
           selectedLocation = { lat: latlng.lat, lng: latlng.lng };
+          clearLocationValidationAlert();
+          reverseGeocodeLocation(latlng.lat, latlng.lng);
           const status = document.getElementById('location-status');
           if (status) status.innerHTML = `📍 Pin placed: <strong>${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</strong>`;
         });
       }
       const status = document.getElementById('location-status');
       if (status) status.innerHTML = `📍 Pin placed: <strong>${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}</strong>`;
+    });
+  }
+
+  
+  function setupLocationTypeAndInfra() {
+    document.querySelectorAll('.location-type-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.location-type-pill').forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+        selectedLocationType = pill.dataset.location || 'general';
+      });
+    });
+
+    document.querySelectorAll('.infra-condition-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.infra-condition-pill').forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+        selectedInfraCondition = pill.dataset.infra || 'normal';
+      });
     });
   }
 
@@ -559,7 +829,21 @@
         if (!selectedCategory) { SurakshaUI.showToast('Please select a category', 'warning'); return false; }
         return true;
       case 2:
-        if (!selectedLocation.lat || !selectedLocation.lng) { SurakshaUI.showToast('Please set a location using GPS or clicking the map', 'warning'); return false; }
+        if (!selectedLocation.lat || !selectedLocation.lng) {
+          const alertEl = document.getElementById('location-validation-alert');
+          const mapEl = document.getElementById('mini-map');
+          if (alertEl) {
+            alertEl.style.display = 'block';
+            alertEl.classList.add('pulse-error');
+            setTimeout(() => alertEl.classList.remove('pulse-error'), 800);
+          }
+          if (mapEl) {
+            mapEl.classList.add('map-border-error');
+            setTimeout(() => mapEl.classList.remove('map-border-error'), 1200);
+          }
+          SurakshaUI.showToast('Please set a location using GPS or clicking the map', 'warning');
+          return false;
+        }
         return true;
       case 3:
         const desc = document.getElementById('report-description')?.value?.trim();
@@ -635,7 +919,9 @@
       const report = {
         id, trackingToken: token, category: selectedCategory,
         description: desc, latitude: selectedLocation.lat, longitude: selectedLocation.lng,
-        severity: selectedSeverity, photoUrl: photoUrl || selectedPhotoPreview,
+        severity: selectedSeverity,
+        locationType: selectedLocationType || 'general',
+        infrastructureCondition: selectedInfraCondition || 'normal', photoUrl: photoUrl || selectedPhotoPreview,
         submittedAt: new Date().toISOString(),
         status: overrideAiConfirmed ? 'pending_review' : 'pending_ai',
         aiReview: overrideAiConfirmed ? {

@@ -2,10 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="theme-color" content="#0D9488">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin Console — SurakshaMap</title>
 
+    <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/components.css?v=2.8.1">
@@ -19,7 +24,7 @@
     <div class="header-inner admin-header-inner">
       <a href="index.html" class="brand admin-brand">
         <img src="assets/SurakshaMap_logo.png" alt="SurakshaMap" class="brand-logo" onerror="this.style.display='none'">
-        <span class="brand-title">SurakshaMap</span>
+        <span class="brand-title">SURAKSHA <span style="color:var(--c-primary);font-weight:800;">MAP</span></span>
         <span class="badge badge-ai">Admin</span>
       </a>
       <div class="header-actions admin-header-actions">
@@ -80,6 +85,14 @@
             <div class="stat-value danger" id="admin-stat-rejected">0</div>
             <div class="stat-label">Rejected</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-value info" id="admin-stat-rate">0%</div>
+            <div class="stat-label">Resolution Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value success" id="admin-stat-mitigated">0 pts</div>
+            <div class="stat-label">Risk Mitigated</div>
+          </div>
         </div>
 
         <!-- Action Bar -->
@@ -97,8 +110,20 @@
           </div>
         </div>
 
+        <!-- View Mode Switcher -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);flex-wrap:wrap;gap:8px;">
+          <div class="btn-group" id="admin-view-mode-group">
+            <button type="button" class="btn btn-sm btn-primary active" id="btn-view-table">📋 Table View</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-view-kanban">📊 Kanban Pipeline</button>
+          </div>
+          <div class="text-caption text-muted" id="admin-active-view-meta">
+            Municipal Operations Dashboard
+          </div>
+        </div>
+
         <!-- Tabs -->
-        <div class="admin-tabs">
+        <div class="admin-tabs" id="admin-tabs-nav">
+          <button class="admin-tab" data-tab="hotspots">🔥 Hotspots & Safety AI <span class="tab-count" id="tab-count-hotspots"></span></button>
           <button class="admin-tab active" data-tab="pending">
             🤖 AI Queue <span class="tab-count" id="tab-count-pending"></span>
           </button>
@@ -117,12 +142,13 @@
         </div>
 
         <!-- Reports Table -->
-        <div class="card admin-table-card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <div class="card admin-table-card" id="admin-table-container" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
           <table class="admin-table">
             <thead>
               <tr>
                 <th>Token</th>
                 <th>Category</th>
+                <th>Location / Infra</th>
                 <th>Severity</th>
                 <th>Details</th>
                 <th>Status</th>
@@ -130,9 +156,90 @@
               </tr>
             </thead>
             <tbody id="admin-table-body">
-              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--c-text-muted);">Loading reports...</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--c-text-muted);">Loading reports...</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Kanban Board View -->
+        <div id="admin-kanban-view" style="display:none;margin-bottom:var(--space-lg);">
+          <div class="kanban-pipeline-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+            <!-- Column 1: Triage & AI Queue -->
+            <div class="kanban-column card" style="background:var(--c-surface-elevated);padding:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #F59E0B;padding-bottom:6px;">
+                <h4 style="margin:0;font-size:0.95rem;font-weight:700;">🤖 AI Triage & Intake</h4>
+                <span class="badge badge-pending" id="kanban-count-triage">0</span>
+              </div>
+              <div class="kanban-items" id="kanban-col-triage" style="display:flex;flex-direction:column;gap:10px;min-height:200px;"></div>
+            </div>
+
+            <!-- Column 2: Ward Escalated -->
+            <div class="kanban-column card" style="background:var(--c-surface-elevated);padding:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #3B82F6;padding-bottom:6px;">
+                <h4 style="margin:0;font-size:0.95rem;font-weight:700;">🏛️ Ward Assigned</h4>
+                <span class="badge badge-active" id="kanban-count-ward">0</span>
+              </div>
+              <div class="kanban-items" id="kanban-col-ward" style="display:flex;flex-direction:column;gap:10px;min-height:200px;"></div>
+            </div>
+
+            <!-- Column 3: Field In-Progress -->
+            <div class="kanban-column card" style="background:var(--c-surface-elevated);padding:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #8B5CF6;padding-bottom:6px;">
+                <h4 style="margin:0;font-size:0.95rem;font-weight:700;">🔧 Field In-Progress</h4>
+                <span class="badge badge-verified" id="kanban-count-progress">0</span>
+              </div>
+              <div class="kanban-items" id="kanban-col-progress" style="display:flex;flex-direction:column;gap:10px;min-height:200px;"></div>
+            </div>
+
+            <!-- Column 4: Resolved -->
+            <div class="kanban-column card" style="background:var(--c-surface-elevated);padding:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #10B981;padding-bottom:6px;">
+                <h4 style="margin:0;font-size:0.95rem;font-weight:700;">✅ Resolved & Closed</h4>
+                <span class="badge badge-resolved" id="kanban-count-resolved">0</span>
+              </div>
+              <div class="kanban-items" id="kanban-col-resolved" style="display:flex;flex-direction:column;gap:10px;min-height:200px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotspots & Safety AI View -->
+        <div id="admin-hotspots-view" style="display:none;">
+          <!-- Time-based safety breakdown card -->
+          <div class="card" style="margin-bottom:var(--space-lg);padding:var(--space-lg);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:var(--space-md);">
+              <h3 style="font-size:1.05rem;font-weight:700;margin:0;">⏰ Time-Based Safety Risk Analysis</h3>
+              <span id="peak-danger-badge" class="badge badge-rejected" style="font-size:0.78rem;">Peak Hazard: Evening Peak (5 PM - 10 PM)</span>
+            </div>
+            <div id="time-analysis-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:var(--space-md);">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Hotspots Container -->
+          <div style="margin-bottom:var(--space-md);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:1.05rem;font-weight:700;margin:0;">🚨 High-Risk Incident Hotspots</h3>
+            <span class="text-small text-muted" id="hotspots-summary-text">Active clusters grouped by geographical radius</span>
+          </div>
+          <div id="hotspots-list-container">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+
+        <!-- Telemetry Inspection Drawer Modal -->
+        <div id="admin-telemetry-drawer" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+          <div class="card animate-scale-in" style="max-width:620px;width:100%;max-height:90vh;overflow-y:auto;background:var(--c-surface);box-shadow:var(--shadow-xl);padding:24px;border-radius:var(--radius-lg);position:relative;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--c-border);padding-bottom:12px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.4rem;">📡</span>
+                <h3 style="margin:0;font-size:1.15rem;font-weight:700;">Incident Telemetry & Audit</h3>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-close-telemetry" style="font-size:1.2rem;line-height:1;padding:4px 8px;">✕</button>
+            </div>
+            <div id="admin-telemetry-content">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
         </div>
 
       </div>

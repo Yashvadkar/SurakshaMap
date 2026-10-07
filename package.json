@@ -8,7 +8,9 @@
     "dev": "npx serve public -l 3000"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1"
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^18.0.5",
+    "pg": "^8.23.1"
   },
   "author": "SurakshaMap Contributors",
   "license": "MIT"

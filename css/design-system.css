@@ -1,66 +1,95 @@
-﻿/* ============================================================================
-   SurakshaMap Design System — Design Tokens, Reset & Typography
+/* ============================================================================
+   SurakshaMap Design System — Authentic Civic Reference Tokens & Typography
+   Source of Truth: https://surakshamap.vercel.app/
    ============================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* ─── Colors: Light Mode ─── */
-  --c-bg: #F8FAFC;
-  --c-surface: #FFFFFF;
-  --c-surface-card: #FFFFFF;
-  --c-surface-elevated: #F1F5F9;
-  --c-text: #0F172A;
-  --c-text-muted: #475569;
-  --c-text-light: #94A3B8;
-  --c-border: #E2E8F0;
-  --c-border-strong: #CBD5E1;
+  /* ─── Reference Palette Tokens (from surakshamap.vercel.app) ─── */
+  --c-indigo: #54423a;
+  --c-indigo-dark: #352a25;
+  --c-indigo-light: #f2eae3;
+  --c-coral: #d9654e;
+  --c-coral-light: #fcece5;
+  --c-teal: #b8795a;
+  --c-teal-light: #f5e6dd;
+  --c-mint: #63806a;
+  --c-mint-light: #e7efe8;
+  --c-amber: #e5a23a;
+  --c-amber-light: #fff1d6;
+  --c-rose: #c94e43;
+  --c-rose-light: #fbe9e6;
 
-  /* Brand / Primary */
-  --c-primary: #4F46E5;
-  --c-primary-hover: #4338CA;
-  --c-primary-light: rgba(79, 70, 229, 0.10);
-  --c-secondary: #0D9488;
-  --c-secondary-hover: #0F766E;
-  --c-accent: #F59E0B;
-  --c-accent-hover: #D97706;
+  /* ─── Structural Surfaces & Canvas ─── */
+  --c-bg: #fbf8f1;
+  --c-surface: #fffdf8;
+  --c-surface-card: #fffdf8;
+  --c-surface-elevated: #f5f0e5;
+  --c-surface-hover: #f7f2e8;
 
-  /* Risk Levels */
-  --c-risk-low: #10B981;
-  --c-risk-moderate: #F59E0B;
-  --c-risk-high: #EF4444;
-  --c-risk-critical: #DC2626;
+  /* ─── Typography: Forest Slate / Charcoal ─── */
+  --c-text: #20312b;
+  --c-text-muted: #5d6b65;
+  --c-text-light: #87928b;
 
-  /* Status */
-  --c-status-pending: #3B82F6;
-  --c-status-review: #EAB308;
-  --c-status-progress: #06B6D4;
-  --c-status-resolved: #10B981;
-  --c-status-rejected: #EF4444;
-  --c-status-duplicate: #8B5CF6;
+  /* ─── Borders: Warm Hairline Dividers ─── */
+  --c-border: #e5e0d5;
+  --c-border-strong: #d4ccbe;
 
-  /* Semantic */
-  --c-success: #10B981;
-  --c-warning: #F59E0B;
-  --c-error: #EF4444;
-  --c-info: #3B82F6;
+  /* ─── Brand Primary: Terracotta Coral & Crimson Rose ─── */
+  --c-primary: #c94e43;
+  --c-primary-hover: #b53d33;
+  --c-primary-light: #fcece5;
+  --c-primary-subtle: rgba(201, 78, 67, 0.06);
 
-  /* Gradients */
-  --g-primary: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-  --g-primary-hover: linear-gradient(135deg, #4338CA 0%, #6D28D9 100%);
-  --g-hero: linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 50%, #F8FAFC 100%);
-  --g-hero-radial: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,0.08) 0%, transparent 70%);
-  --g-card-shine: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 100%);
-  --g-mint: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-  --g-amber: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
-  --g-danger: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+  /* ─── Secondary & Accents ─── */
+  --c-secondary: #b8795a;
+  --c-secondary-hover: #9c6045;
+  --c-secondary-light: #f5e6dd;
+  --c-accent: #e5a23a;
+  --c-accent-hover: #d99228;
 
-  /* Typography */
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+  /* ─── Deep Umber / Navigation Accent ─── */
+  --c-navy: #54423a;
+  --c-navy-surface: #352a25;
 
-  /* Spacing Scale */
+  /* ─── Semantic Hazard & Risk Levels ─── */
+  --c-risk-low: #e5a23a;
+  --c-risk-moderate: #d9654e;
+  --c-risk-high: #c94e43;
+  --c-risk-critical: #ba3024;
+
+  /* ─── Status ─── */
+  --c-status-pending: #b8795a;
+  --c-status-review: #e5a23a;
+  --c-status-progress: #d9654e;
+  --c-status-resolved: #63806a;
+  --c-status-rejected: #c94e43;
+  --c-status-duplicate: #87928b;
+
+  /* ─── Semantic Colors ─── */
+  --c-success: #63806a;
+  --c-warning: #e5a23a;
+  --c-error: #c94e43;
+  --c-info: #b8795a;
+
+  /* ─── Gradients: Warm Reference Palette ─── */
+  --g-primary: linear-gradient(135deg, #c94e43 0%, #e18a52 100%);
+  --g-primary-hover: linear-gradient(135deg, #b53d33 0%, #d17a42 100%);
+  --g-hero: linear-gradient(135deg, #f9ebdd 0%, #fff9f1 50%, #f4e2d6 100%);
+  --g-hero-radial: radial-gradient(ellipse at 50% 0%, rgba(217, 101, 78, 0.08) 0%, transparent 65%);
+  --g-card-shine: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.3) 100%);
+  --g-mint: linear-gradient(135deg, #63806a 0%, #4f6855 100%);
+  --g-amber: linear-gradient(135deg, #e5a23a 0%, #c98522 100%);
+  --g-danger: linear-gradient(135deg, #c94e43 0%, #ab372d 100%);
+
+  /* ─── Typography: Geist ─── */
+  --font-display: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
+  /* ─── Spacing Scale ─── */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
@@ -70,33 +99,33 @@
   --space-3xl: 4rem;
   --space-4xl: 6rem;
 
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
+  /* ─── Border Radius ─── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.10);
-  --shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.14);
-  --shadow-primary-glow: 0 8px 32px rgba(79, 70, 229, 0.25);
-  --shadow-card-hover: 0 12px 40px rgba(15, 23, 42, 0.12);
-  --shadow-inner: inset 0 2px 4px rgba(15, 23, 42, 0.04);
+  /* ─── Shadows: Deep Charcoal Tinted Elevation ─── */
+  --shadow-xs: 0 1px 2px rgba(32, 49, 43, 0.04);
+  --shadow-sm: 0 1px 3px rgba(32, 49, 43, 0.06), 0 1px 2px rgba(32, 49, 43, 0.04);
+  --shadow-md: 0 4px 14px rgba(32, 49, 43, 0.08), 0 2px 6px rgba(32, 49, 43, 0.04);
+  --shadow-lg: 0 12px 30px rgba(32, 49, 43, 0.10), 0 4px 10px rgba(32, 49, 43, 0.05);
+  --shadow-xl: 0 18px 48px rgba(32, 49, 43, 0.13);
+  --shadow-primary-glow: 0 4px 16px rgba(201, 78, 67, 0.28);
+  --shadow-card-hover: 0 8px 24px rgba(32, 49, 43, 0.08);
+  --shadow-inner: inset 0 1px 2px rgba(32, 49, 43, 0.05);
 
-  /* Transitions */
+  /* ─── Transitions ─── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --t-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --t-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --t-smooth: 350ms cubic-bezier(0.16, 1, 0.3, 1);
-  --t-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-smooth: 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  --t-spring: 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Z-Index Scale */
+  /* ─── Z-Index Scale ─── */
   --z-base: 1;
   --z-nav: 100;
   --z-dropdown: 200;
@@ -105,36 +134,51 @@
   --z-toast: 400;
   --z-tooltip: 500;
 
-  /* Layout */
+  /* ─── Layout ─── */
   --bottom-nav-height: 64px;
   --header-height: 64px;
   --max-width: 1280px;
   --content-width: 720px;
 }
 
-/* ─── Dark Mode ─── */
+/* ─── Dark Mode (Warm Espresso Night Canvas) ─── */
 [data-theme="dark"] {
-  --c-bg: #0F172A;
-  --c-surface: #1E293B;
-  --c-surface-card: #1E293B;
-  --c-surface-elevated: #334155;
-  --c-text: #F1F5F9;
-  --c-text-muted: #94A3B8;
-  --c-text-light: #64748B;
-  --c-border: #334155;
-  --c-border-strong: #475569;
-  --c-primary-light: rgba(79, 70, 229, 0.18);
+  --c-bg: #1a1614;
+  --c-surface: #26201d;
+  --c-surface-card: #26201d;
+  --c-surface-elevated: #332b27;
+  --c-surface-hover: #3d342f;
 
-  --g-hero: linear-gradient(180deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%);
-  --g-hero-radial: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,0.15) 0%, transparent 70%);
-  --g-card-shine: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  --c-text: #f5f0e5;
+  --c-text-muted: #c4baa9;
+  --c-text-light: #8a7f70;
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.3);
+  --c-border: #3d342e;
+  --c-border-strong: #4d423b;
+
+  --c-primary: #e06053;
+  --c-primary-hover: #f07468;
+  --c-primary-light: rgba(224, 96, 83, 0.18);
+  --c-primary-subtle: rgba(224, 96, 83, 0.08);
+
+  --c-secondary: #c98865;
+  --c-secondary-hover: #dd9974;
+  --c-secondary-light: rgba(201, 136, 101, 0.18);
+
+  --c-navy: #14110f;
+  --c-navy-surface: #1e1916;
+
+  --g-hero: linear-gradient(180deg, #1a1614 0%, #2a1f1b 50%, #1a1614 100%);
+  --g-hero-radial: radial-gradient(ellipse at 50% 0%, rgba(224, 96, 83, 0.12) 0%, transparent 65%);
+  --g-card-shine: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-primary-glow: 0 4px 16px rgba(224, 96, 83, 0.35);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Base Reset ─── */
@@ -173,23 +217,17 @@ button { cursor: pointer; border: none; background: none; }
 ::-webkit-scrollbar-thumb:hover { background: var(--c-text-light); }
 
 /* ─── Typography ─── */
-.text-display { font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.025em; color: var(--c-text); }
-.text-heading { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; color: var(--c-text); }
+.text-display { font-family: var(--font-display); font-size: 2.25rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; color: var(--c-text); }
+.text-heading { font-family: var(--font-display); font-size: 1.65rem; font-weight: 700; line-height: 1.25; letter-spacing: -0.02em; color: var(--c-text); }
 .text-subheading { font-family: var(--font-body); font-size: 1.125rem; font-weight: 600; line-height: 1.4; color: var(--c-text); }
-.text-body { font-family: var(--font-body); font-size: 1rem; font-weight: 400; line-height: 1.6; color: var(--c-text); }
-.text-small { font-size: 0.875rem; line-height: 1.5; }
+.text-body { font-family: var(--font-body); font-size: 0.95rem; font-weight: 400; line-height: 1.6; color: var(--c-text); }
+.text-small { font-size: 0.85rem; line-height: 1.5; }
 .text-caption { font-size: 0.75rem; line-height: 1.4; color: var(--c-text-muted); }
-.text-mono { font-family: var(--font-mono); font-size: 0.875rem; letter-spacing: 0.02em; }
+.text-mono { font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.01em; }
 .text-muted { color: var(--c-text-muted); }
 .text-gradient {
   background: var(--g-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-/* Responsive typography */
-@media (max-width: 640px) {
-  .text-display { font-size: 1.875rem; }
-  .text-heading { font-size: 1.375rem; }
 }
