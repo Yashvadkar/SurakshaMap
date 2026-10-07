@@ -16,7 +16,11 @@
     setupRouting();
     setupNavigation();
     handleRoute(window.location.hash || '#/');
-    SurakshaUI.initRevealObserver();
+    if (window.SurakshaUI) {
+      SurakshaUI.initRevealObserver();
+      SurakshaUI.initSpotlightCards();
+      SurakshaUI.initMagneticElements();
+    }
   });
 
   function setupRouting() {
@@ -69,6 +73,14 @@
         if (window.SurakshaTracking) window.SurakshaTracking.init();
         break;
     }
+
+    // Re-bind motion physics & spotlight shaders for active view components
+    setTimeout(() => {
+      if (window.SurakshaUI) {
+        SurakshaUI.initSpotlightCards();
+        SurakshaUI.initMagneticElements();
+      }
+    }, 120);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -206,11 +218,165 @@
     }
   }
 
+  /* ── Ambient Particle Physics Canvas ── */
+  let ambientCanvasRunning = false;
+  let ambientAnimationId = null;
+  let heroCanvasInitialized = false;
+
+  function initHeroCanvas() {
+    const canvas = document.getElementById('hero-ambient-canvas');
+    if (!canvas) return;
+
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return; // Respect accessibility preferences
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = 0;
+    let height = 0;
+    let particles = [];
+    let mouse = { x: -9999, y: -9999, active: false };
+    const PARTICLE_COUNT = 32;
+
+    function resize() {
+      const rect = canvas.parentElement ? canvas.parentElement.getBoundingClientRect() : canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = rect.width || window.innerWidth;
+      height = rect.height || 600;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    }
+
+    function createParticles() {
+      particles = [];
+      const palettes = [
+        'rgba(201, 78, 67,',   // Coral / primary accent
+        'rgba(225, 138, 82,',  // Amber / warning
+        'rgba(164, 110, 85,',  // Muted terracotta
+        'rgba(46, 125, 82,'    // Emerald safe pulse
+      ];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+          x: Math.random() * (width || 800),
+          y: Math.random() * (height || 600),
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35,
+          radius: 1.4 + Math.random() * 1.8,
+          color: palettes[i % palettes.length],
+          baseAlpha: 0.22 + Math.random() * 0.35
+        });
+      }
+    }
+
+    function step() {
+      if (currentRoute !== 'home' || document.hidden) {
+        ambientCanvasRunning = false;
+        return;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce walls
+        if (p.x < 0) { p.x = 0; p.vx *= -1; }
+        else if (p.x > width) { p.x = width; p.vx *= -1; }
+        if (p.y < 0) { p.y = 0; p.vy *= -1; }
+        else if (p.y > height) { p.y = height; p.vy *= -1; }
+
+        // Subtle gentle mouse repulsion
+        if (mouse.active) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 130 && dist > 1) {
+            const force = (130 - dist) / 130 * 0.28;
+            p.x -= (dx / dist) * force;
+            p.y += (dy / dist) * force;
+          }
+        }
+
+        // Draw particle dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.color} ${p.baseAlpha})`;
+        ctx.fill();
+
+        // Connect nearby nodes
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 110) {
+            const alpha = (1 - dist / 110) * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(201, 78, 67, ${alpha})`;
+            ctx.lineWidth = 0.85;
+            ctx.stroke();
+          }
+        }
+      }
+
+      ambientAnimationId = requestAnimationFrame(step);
+    }
+
+    function startAnimation() {
+      if (!ambientCanvasRunning) {
+        ambientCanvasRunning = true;
+        if (ambientAnimationId) cancelAnimationFrame(ambientAnimationId);
+        ambientAnimationId = requestAnimationFrame(step);
+      }
+    }
+
+    if (!heroCanvasInitialized) {
+      heroCanvasInitialized = true;
+      resize();
+      createParticles();
+
+      window.addEventListener('resize', () => {
+        resize();
+      }, { passive: true });
+
+      const heroWrap = canvas.closest('.home-hero') || canvas.parentElement;
+      if (heroWrap) {
+        heroWrap.addEventListener('mousemove', (e) => {
+          const rect = canvas.getBoundingClientRect();
+          mouse.x = e.clientX - rect.left;
+          mouse.y = e.clientY - rect.top;
+          mouse.active = true;
+        }, { passive: true });
+
+        heroWrap.addEventListener('mouseleave', () => {
+          mouse.active = false;
+          mouse.x = -9999;
+          mouse.y = -9999;
+        }, { passive: true });
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && currentRoute === 'home') {
+          startAnimation();
+        }
+      });
+    }
+
+    startAnimation();
+  }
+
   const SurakshaHome = {
     getMap: () => homeMap,
     invalidateSize: () => { if (homeMap) homeMap.invalidateSize(); },
     init: async function () {
       try {
+        initHeroCanvas();
         if (!window.SurakshaDB) return;
         const reports = await window.SurakshaDB.getAllReports();
         const total = reports.length;

@@ -393,21 +393,72 @@
     setTimeout(() => ripple.remove(), 600);
   }
 
-  // ─── Animated Counter ───
-  function animateCounter(el, target, duration = 1200) {
+  // ─── Animated Counter with Exponential Spring Deceleration ───
+  function animateCounter(el, target, duration = 1400) {
     if (!el) return;
-    const start = parseInt(el.textContent) || 0;
+    const start = parseInt(el.textContent, 10) || 0;
     const diff = target - start;
+    if (diff === 0) { el.textContent = target; return; }
     const startTime = performance.now();
 
     function step(now) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      // Fluid deceleration curve (1 - 2^(-10 * progress))
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       el.textContent = Math.round(start + diff * eased);
-      if (progress < 1) requestAnimationFrame(step);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = target;
+      }
     }
     requestAnimationFrame(step);
+  }
+
+  // ─── 21st.dev Dynamic Cursor Spotlight Shader Engine ───
+  function initSpotlightCards() {
+    const cards = document.querySelectorAll('.card, .step-card, .stat-card, .kanban-card, .incident-item');
+    cards.forEach(card => {
+      if (card.dataset.spotlightInit) return;
+      card.dataset.spotlightInit = 'true';
+
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.removeProperty('--mouse-x');
+        card.style.removeProperty('--mouse-y');
+      });
+    });
+  }
+
+  // ─── Physics-Driven Magnetic Action Elements ───
+  function initMagneticElements() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const elements = document.querySelectorAll('.theme-toggle, .map-filter-pill, .btn-primary');
+    elements.forEach(el => {
+      if (el.dataset.magneticInit) return;
+      el.dataset.magneticInit = 'true';
+
+      el.addEventListener('mousemove', (e) => {
+        const rect = el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const deltaX = (e.clientX - centerX) * 0.18;
+        const deltaY = (e.clientY - centerY) * 0.18;
+        el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+      });
+
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = '';
+      });
+    });
   }
 
   // ─── Intersection Observer for Reveal Animations ───
@@ -497,6 +548,8 @@
     getInfrastructureLabel,
     createRipple,
     animateCounter,
+    initSpotlightCards,
+    initMagneticElements,
     initRevealObserver,
     escapeHtml,
     formatDate,
