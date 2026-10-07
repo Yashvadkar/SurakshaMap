@@ -6,7 +6,7 @@
   'use strict';
 
   let currentTab = 'review';
-  let currentViewMode = 'table';
+  let currentViewMode = 'kanban';
   let cachedAnalytics = null;
   let reports = [];
   let unsubscribe = null;
@@ -746,7 +746,10 @@
     const btnKanban = document.getElementById('btn-view-kanban');
     const metaEl = document.getElementById('admin-active-view-meta');
 
-    if (!btnTable || !btnKanban) return;
+    if (!btnTable || !btnKanban) {
+      currentViewMode = 'kanban';
+      return;
+    }
 
     btnTable.addEventListener('click', () => {
       currentViewMode = 'table';
@@ -778,7 +781,7 @@
       if (tbl) tbl.style.display = 'none';
       if (tabs) tabs.style.display = 'none';
       if (kb) kb.style.display = 'block';
-      if (metaEl) metaEl.textContent = 'Showing Kanban Workflow Pipeline';
+      if (metaEl) metaEl.textContent = 'Live Stage Progression & Resolution';
       renderKanbanView();
     });
   }
